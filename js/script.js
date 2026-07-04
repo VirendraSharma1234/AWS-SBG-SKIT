@@ -1,0 +1,433 @@
+(function(){
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- scroll-scrubbed assembly story ----------
+  const storySection = document.getElementById('scrollStory');
+  if(storySection){
+    const shapeEls = [
+      document.getElementById('shape1'), document.getElementById('shape2'),
+      document.getElementById('shape3'), document.getElementById('shape4'),
+      document.getElementById('shape5'), document.getElementById('shape6')
+    ];
+    const storyCore = document.getElementById('storyCore');
+    const storyText = document.getElementById('storyText');
+    const storyHint = document.getElementById('storyHint');
+
+    // [startX, startY, startRot, endX, endY, endRot] — end positions form a hexagon ring
+    const shapeConfig = [
+      [-420, -260, -140,    0, -130,  -6],
+      [ 480, -300,  150,  112,  -65,   8],
+      [ 440,  320, -110,  112,   65,  -8],
+      [ -60,  420,  190,    0,  130,   6],
+      [-460,  180, -170, -112,   65,  -8],
+      [  90, -440,  120, -112,  -65,   8]
+    ];
+
+    function lerp(a, b, t){ return a + (b - a) * t; }
+    function smoothstep(t){ return t*t*(3 - 2*t); }
+
+    let ticking = false;
+    function updateStory(){
+      ticking = false;
+      const rect = storySection.getBoundingClientRect();
+      const total = rect.height - window.innerHeight;
+      if(total <= 0) return;
+      let progress = -rect.top / total;
+      progress = Math.max(0, Math.min(1, progress));
+      const eased = smoothstep(progress);
+
+      shapeEls.forEach((el, i) => {
+        if(!el) return;
+        const [sx, sy, sr, ex, ey, er] = shapeConfig[i];
+        const x = lerp(sx, ex, eased);
+        const y = lerp(sy, ey, eased);
+        const rot = lerp(sr, er, eased);
+        const scale = lerp(0.7, 1, eased);
+        const opacity = lerp(0.35, 1, eased);
+        el.style.transform = `translate(-50%,-50%) translate(${x}px, ${y}px) rotate(${rot}deg) scale(${scale})`;
+        el.style.opacity = opacity;
+      });
+
+      storyCore.classList.toggle('show', progress > 0.72);
+      storyText.classList.toggle('show', progress > 0.6);
+      if(storyHint) storyHint.style.opacity = progress > 0.08 ? '0' : '0.7';
+    }
+    function onStoryScroll(){
+      if(!ticking){ requestAnimationFrame(updateStory); ticking = true; }
+    }
+    document.addEventListener('scroll', onStoryScroll, { passive:true });
+    window.addEventListener('resize', updateStory);
+    updateStory();
+  }
+
+  // ---------- magnifying-glass gradient text reveal ----------
+  const magnifyHeading = document.getElementById('magnifyHeading');
+  if(magnifyHeading && matchMedia('(hover: hover)').matches && !reduceMotion){
+    const baseH1 = magnifyHeading.querySelector('h1');
+    const overlay = baseH1.cloneNode(true);
+    overlay.classList.add('mh-gradient');
+    overlay.setAttribute('aria-hidden', 'true');
+    magnifyHeading.appendChild(overlay);
+
+    const lens = document.createElement('div');
+    lens.className = 'magnify-lens';
+    magnifyHeading.appendChild(lens);
+
+    const radius = 110;
+    let targetX = 0, targetY = 0, curX = 0, curY = 0, raf = null;
+
+    function render(){
+      curX += (targetX - curX) * 0.18;
+      curY += (targetY - curY) * 0.18;
+      overlay.style.clipPath = `circle(${radius}px at ${curX}px ${curY}px)`;
+      lens.style.transform = `translate(${curX - 110}px, ${curY - 110}px)`;
+      raf = requestAnimationFrame(render);
+    }
+
+    magnifyHeading.addEventListener('mouseenter', (e) => {
+      magnifyHeading.classList.add('hovering');
+      const r = magnifyHeading.getBoundingClientRect();
+      curX = targetX = e.clientX - r.left;
+      curY = targetY = e.clientY - r.top;
+      if(!raf) render();
+    });
+    magnifyHeading.addEventListener('mousemove', (e) => {
+      const r = magnifyHeading.getBoundingClientRect();
+      targetX = e.clientX - r.left;
+      targetY = e.clientY - r.top;
+    });
+    magnifyHeading.addEventListener('mouseleave', () => {
+      magnifyHeading.classList.remove('hovering');
+      cancelAnimationFrame(raf); raf = null;
+      overlay.style.clipPath = `circle(0px at ${curX}px ${curY}px)`;
+    });
+  }
+
+  // ---------- boot loader ----------
+  const bootLoader = document.getElementById('bootLoader');
+  const bootBarFill = document.getElementById('bootBarFill');
+  if(bootLoader){
+    if(reduceMotion){
+      bootLoader.remove();
+    } else {
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => { bootBarFill.style.width = '100%'; });
+      setTimeout(() => {
+        bootLoader.classList.add('exit');
+        document.body.style.overflow = '';
+        setTimeout(() => bootLoader.remove(), 750);
+      }, 1900);
+    }
+  }
+
+  // ---------- spotlight hover tracking ----------
+  document.querySelectorAll('.spotlight').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+      card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+    });
+  });
+
+  // ---------- cursor cloud-particle trail ----------
+  const canvas = document.getElementById('cursorCanvas');
+  if(canvas && !reduceMotion && matchMedia('(hover: hover)').matches){
+    const ctx = canvas.getContext('2d');
+    let w, h, particles = [];
+    function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+    resize();
+    window.addEventListener('resize', resize);
+
+    let lastSpawn = 0;
+    window.addEventListener('mousemove', (e) => {
+      const now = performance.now();
+      if(now - lastSpawn < 35) return;
+      lastSpawn = now;
+      const colors = ['255,153,0', '41,182,216', '234,240,245'];
+      particles.push({
+        x:e.clientX, y:e.clientY,
+        vx:(Math.random()-0.5)*0.4, vy:-0.3 - Math.random()*0.4,
+        r:6 + Math.random()*10,
+        life:1,
+        color:colors[Math.floor(Math.random()*colors.length)]
+      });
+      if(particles.length > 90) particles.shift();
+    });
+
+    function tick(){
+      ctx.clearRect(0,0,w,h);
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.life -= 0.012; p.r += 0.15;
+        if(p.life > 0){
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+          ctx.fillStyle = `rgba(${p.color},${p.life*0.18})`;
+          ctx.filter = 'blur(2px)';
+          ctx.fill();
+        }
+      });
+      particles = particles.filter(p => p.life > 0);
+      requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
+  // ---------- hero scroll parallax ----------
+  const heroNetwork = document.querySelector('.hero-network-wrap');
+  function heroParallax(){
+    const y = window.scrollY;
+    if(y < window.innerHeight && heroNetwork){
+      heroNetwork.style.transform = `translateY(calc(-50% + ${y*0.18}px)) scale(${1 - y*0.0003})`;
+    }
+  }
+  document.addEventListener('scroll', heroParallax, { passive:true });
+
+  // ---------- nav scroll state ----------
+  const header = document.getElementById('siteHeader');
+  const progressBar = document.getElementById('progressBar');
+  const toTop = document.getElementById('toTop');
+
+  function onScroll(){
+    const y = window.scrollY;
+    header.classList.toggle('scrolled', y > 40);
+    const h = document.documentElement;
+    const scrollPct = (y / (h.scrollHeight - h.clientHeight)) * 100;
+    progressBar.style.width = scrollPct + '%';
+    toTop.classList.toggle('show', y > 600);
+  }
+  document.addEventListener('scroll', onScroll, { passive:true });
+  onScroll();
+
+  // ---------- cloud parallax ----------
+  const cloudEls = document.querySelectorAll('.cloud-parallax');
+  function onCloudScroll(){
+    const y = window.scrollY;
+    cloudEls.forEach(el => {
+      const speed = parseFloat(el.dataset.speed || 0.05);
+      el.style.transform = `translateY(${y * speed}px)`;
+    });
+  }
+  document.addEventListener('scroll', onCloudScroll, { passive:true });
+  onCloudScroll();
+
+  toTop.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
+
+  // ---------- mobile nav ----------
+  const navToggle = document.getElementById('navToggle');
+  const mainNav = document.getElementById('mainNav');
+  navToggle.addEventListener('click', () => {
+    mainNav.classList.toggle('open');
+    navToggle.classList.toggle('active');
+  });
+  mainNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mainNav.classList.remove('open')));
+
+  // ---------- interactive terminal chatbot (rule-based, no external API) ----------
+  const termOutput = document.getElementById('termOutput');
+  const termInput = document.getElementById('termInput');
+  let awaitingName = true;
+  let builderName = '';
+
+  function scrollTermToBottom(){
+    if(termOutput) termOutput.scrollTop = termOutput.scrollHeight;
+  }
+
+  function printLine(text, cls){
+    if(!termOutput) return;
+    const div = document.createElement('div');
+    div.className = 'line' + (cls ? ' ' + cls : '');
+    div.textContent = text;
+    termOutput.appendChild(div);
+    scrollTermToBottom();
+  }
+
+  function printTyped(text, cls, speed){
+    return new Promise((resolve) => {
+      if(!termOutput) return resolve();
+      const div = document.createElement('div');
+      div.className = 'line' + (cls ? ' ' + cls : '');
+      termOutput.appendChild(div);
+      let i = 0;
+      const step = () => {
+        div.textContent = text.slice(0, i);
+        scrollTermToBottom();
+        i++;
+        if(i <= text.length){
+          setTimeout(step, speed || 16);
+        } else {
+          resolve();
+        }
+      };
+      step();
+    });
+  }
+
+  const jokes = [
+    'Why did the developer go broke? Because they lost their domain in a divorce.',
+    'There is no cloud — it is just someone else\'s computer (with really good uptime).',
+    'S3 bucket walks into a bar. Bartender says "sorry, access denied."',
+    '99 little bugs in the code, 99 little bugs — take one down, patch it around, 127 little bugs in the code.'
+  ];
+
+  const helpText = 'Try: about · events · team · join · socials · joke · clear · help';
+
+  function botReply(raw){
+    const q = raw.toLowerCase().trim();
+    if(!q) return "Say something, I don't bite — I'm just JavaScript.";
+    if(/\bhelp\b/.test(q)) return helpText;
+    if(/(event|workshop|hackathon|schedule|session)/.test(q)) return "Our year kicks off with the Orientation Session — date dropping soon! More sessions are lined up right after. Scroll to the Events section 👇";
+    if(/(team|lead|who runs|founder)/.test(q)) return "We're run by 6 students — Shlok (Club Lead), Virendra (Technical Lead), Tushar (Events), Naman (Community), Vansh (PR) and Soumya (Social/Marketing). Full squad is in the Team section.";
+    if(/(join|member|sign ?up|register)/.test(q)) return "Easiest way in: hit the WhatsApp group in the Join section, or tap the 'Join the crew' button up top. Zero forms, zero fees.";
+    if(/(social|instagram|linkedin|meetup|insta)/.test(q)) return "We're on LinkedIn, Instagram and Meetup — links are in the Join section footer.";
+    if(/(about|what is|purpose|mission)/.test(q)) return "AWS Student Builder Group SKIT is a student-run community that turns cloud theory into shipped projects — workshops, hackathons, cert sprints, all of it.";
+    if(/(joke|funny|pun)/.test(q)) return jokes[Math.floor(Math.random() * jokes.length)];
+    if(/(clear|reset)/.test(q)){ termOutput.innerHTML = ''; return null; }
+    if(/(thank|thanks|thx)/.test(q)) return "Anytime, builder. 🚀";
+    if(/(hi|hello|hey|yo)/.test(q)) return `Hey again, ${builderName || 'builder'}! What do you want to know?`;
+    if(/(bye|exit|quit)/.test(q)) return "Catch you in the WhatsApp group 👋";
+    return "Not in my playbook yet — try 'help', or just ask us for real in the WhatsApp group.";
+  }
+
+  async function handleTermInput(value){
+    const trimmed = value.trim();
+    if(!trimmed) return;
+    printLine('$ ' + trimmed, 'you');
+
+    if(awaitingName){
+      builderName = trimmed.split(' ')[0];
+      awaitingName = false;
+      await printTyped(`Nice to meet you, ${builderName}! Welcome to the AWS Student Builder Group, SKIT. 🚀`, 'bot');
+      await printTyped(helpText, 'sys');
+      return;
+    }
+
+    const reply = botReply(trimmed);
+    if(reply) await printTyped(reply, 'bot');
+  }
+
+  if(termInput){
+    termInput.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter'){
+        const value = termInput.value;
+        termInput.value = '';
+        handleTermInput(value);
+      }
+    });
+
+    // boot sequence for the terminal chat
+    (async function bootTerminalChat(){
+      await new Promise(r => setTimeout(r, 900));
+      await printTyped('$ aws sbg --init', 'sys', 10);
+      await new Promise(r => setTimeout(r, 200));
+      await printTyped('Booting AWS Student Builder Group console...', 'sys', 12);
+      await printTyped('✓ Connected — ready to chat', 'bot', 12);
+      await printTyped("What's your name, builder?", 'bot', 20);
+    })();
+  }
+
+  // node chip stagger
+  document.querySelectorAll('.node-chip').forEach((chip, i) => {
+    chip.style.animationDelay = (1.1 + i * 0.09) + 's';
+  });
+
+  // ---------- word-by-word heading reveal ----------
+  const splitEls = document.querySelectorAll('.split-reveal');
+  splitEls.forEach(el => {
+    const words = el.textContent.trim().split(/\s+/);
+    el.innerHTML = words.map(w => `<span class="word"><span class="word-inner">${w}</span></span>`).join(' ');
+    el.querySelectorAll('.word-inner').forEach((w, i) => {
+      w.style.transitionDelay = (i * 0.055) + 's';
+    });
+  });
+  const splitIo = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.classList.add('in');
+        splitIo.unobserve(entry.target);
+      }
+    });
+  }, { threshold:0.35 });
+  splitEls.forEach(el => splitIo.observe(el));
+
+  // ---------- scroll reveal ----------
+  const revealEls = document.querySelectorAll('.reveal, .reveal-stagger');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold:0.15 });
+  revealEls.forEach(el => io.observe(el));
+
+  // ---------- counter animation ----------
+  const statNums = document.querySelectorAll('.stat-num');
+  const counted = new WeakSet();
+  const statIo = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting && !counted.has(entry.target)){
+        counted.add(entry.target);
+        const el = entry.target;
+        const match = el.textContent.match(/\d+/);
+        if(!match) return;
+        const target = parseInt(match[0], 10);
+        const suffix = el.textContent.replace(/\d+/, '');
+        let start = 0;
+        const dur = 1200;
+        const startTime = performance.now();
+        function step(now){
+          const progress = Math.min((now - startTime) / dur, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          el.textContent = Math.round(eased * target) + suffix;
+          if(progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+    });
+  }, { threshold:0.5 });
+  statNums.forEach(el => statIo.observe(el));
+
+  // ---------- team card tilt ----------
+  document.querySelectorAll('.team-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      card.style.transform = `perspective(600px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg) translateY(-4px)`;
+    });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+  });
+
+  // ---------- magnetic buttons ----------
+  document.querySelectorAll('.btn-primary').forEach(btn => {
+    btn.addEventListener('mousemove', (e) => {
+      const r = btn.getBoundingClientRect();
+      const x = (e.clientX - r.left - r.width / 2) * 0.25;
+      const y = (e.clientY - r.top - r.height / 2) * 0.4;
+      btn.style.transform = `translate(${x}px, ${y - 2}px)`;
+    });
+    btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
+  });
+
+  // ---------- terminal window controls ----------
+  const terminalWrap = document.getElementById('terminalWrap');
+  const terminalEl = document.getElementById('terminalEl');
+  const tdotClose = document.getElementById('tdotClose');
+  const tdotMin = document.getElementById('tdotMin');
+  const tdotMax = document.getElementById('tdotMax');
+
+  // red: close — fades out then the window is fully removed
+  tdotClose.addEventListener('click', () => {
+    terminalWrap.classList.add('is-closing');
+    setTimeout(() => terminalWrap.classList.add('is-removed'), 350);
+  });
+
+  // yellow: toggles minimize (top bar only, 3 dots) <-> maximize (full window)
+  tdotMin.addEventListener('click', () => {
+    terminalEl.classList.toggle('is-minimized');
+  });
+
+  // green: intentionally a no-op (traffic-light look only)
+  tdotMax.addEventListener('click', () => {});
+
+})();
