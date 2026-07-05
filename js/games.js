@@ -1440,12 +1440,6 @@
   if(gameLauncher) gameLauncher.addEventListener('click', openArcade);
   if(gameCloseBtn) gameCloseBtn.addEventListener('click', closeArcade);
   if(gameBackBtn) gameBackBtn.addEventListener('click', showLibrary);
-  
-  if(gameModal) {
-    gameModal.addEventListener('click', (e) => {
-      if(e.target === gameModal) closeArcade();
-    });
-  }
 
   document.querySelectorAll('.gl-card').forEach(card => {
     card.addEventListener('click', () => {
