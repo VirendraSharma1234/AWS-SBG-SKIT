@@ -237,7 +237,7 @@
 
   .hero h1{
     font-family:var(--display); font-weight:700;
-    font-size:clamp(38px, 5.2vw, 68px); line-height:1.04; letter-spacing:-1.5px;
+    font-size:clamp(46px, 8.5vw, 76px); line-height:1.04; letter-spacing:-1.5px;
     margin-bottom:22px;
   }
   .magnify-heading{ position:relative; }
@@ -252,7 +252,7 @@
   .mh-gradient h1 .line span {
     color:var(--orange-light) !important; background:none !important; -webkit-background-clip:unset !important; opacity:1 !important; transform:none !important; filter:none !important;
   }
-  .mh-gradient h1 .accent {
+  .mh-gradient h1 .line span.accent {
     color:var(--text) !important; background:none !important; -webkit-background-clip:unset !important;
   }
   .mh-gradient p.lead {

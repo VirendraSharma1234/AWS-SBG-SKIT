@@ -62,7 +62,7 @@
 
   // ---------- magnifying-glass gradient text reveal ----------
   const magnifyWrapper = document.getElementById('magnifyWrapper');
-  if(magnifyWrapper && matchMedia('(hover: hover)').matches && !reduceMotion){
+  if(magnifyWrapper && !reduceMotion){
     const baseContent = document.getElementById('magnifyBase');
     const overlay = baseContent.cloneNode(true);
     overlay.id = '';
@@ -78,11 +78,17 @@
     let targetX = 0, targetY = 0, curX = 0, curY = 0, raf = null;
 
     function render(){
-      curX += (targetX - curX) * 0.18;
-      curY += (targetY - curY) * 0.18;
-      overlay.style.clipPath = `circle(${radius}px at ${curX}px ${curY}px)`;
-      lens.style.transform = `translate(${curX - 110}px, ${curY - 110}px)`;
-      raf = requestAnimationFrame(render);
+      const dx = targetX - curX;
+      const dy = targetY - curY;
+      if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+        curX += dx * 0.18;
+        curY += dy * 0.18;
+        overlay.style.clipPath = `circle(${radius}px at ${curX}px ${curY}px)`;
+        lens.style.transform = `translate(${curX - 110}px, ${curY - 110}px)`;
+        raf = requestAnimationFrame(render);
+      } else {
+        raf = null;
+      }
     }
 
     magnifyWrapper.addEventListener('pointerenter', (e) => {
@@ -100,6 +106,7 @@
       const rect = magnifyWrapper.getBoundingClientRect();
       targetX = e.clientX - rect.left;
       targetY = e.clientY - rect.top;
+      if (!raf) raf = requestAnimationFrame(render);
     });
 
     magnifyWrapper.addEventListener('pointerleave', () => {
