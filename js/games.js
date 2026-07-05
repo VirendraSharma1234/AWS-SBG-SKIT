@@ -707,10 +707,11 @@
 
     handlePointer(e, rect) {
       if(!this.running) return;
-      if(e.type === 'touchstart') {
+      if(e.type === 'pointerdown' || e.type === 'touchstart') {
         this.touchStartX = e.clientX;
         this.touchStartY = e.clientY;
-      } else if (e.type === 'touchmove') {
+      } else if (e.type === 'pointermove' || e.type === 'touchmove') {
+        if (this.touchStartX === undefined) return;
         // Calculate swipe
         const diffX = e.clientX - this.touchStartX;
         const diffY = e.clientY - this.touchStartY;
@@ -983,8 +984,7 @@
         </div>
       `;
       this.circle = document.getElementById('rrCircle');
-      this.circle.addEventListener('mousedown', this.onCircleClick);
-      this.circle.addEventListener('touchstart', (e) => { e.preventDefault(); this.onCircleClick(); }, {passive: false});
+      this.circle.addEventListener('pointerdown', (e) => { e.preventDefault(); this.onCircleClick(); });
       
       super.start();
       this.resetRound();
@@ -1471,16 +1471,10 @@
   if(gameCanvas) {
     gameCanvas.addEventListener('touchstart', (e) => { 
       e.preventDefault(); 
-      if(activeGame && activeGame.type === 'canvas') {
-        activeGame.handlePointer({type: 'touchstart', clientX: e.touches[0].clientX, clientY: e.touches[0].clientY}, gameCanvas.getBoundingClientRect());
-      }
     }, { passive: false });
     
     gameCanvas.addEventListener('touchmove', (e) => { 
       e.preventDefault(); 
-      if(activeGame && activeGame.type === 'canvas') {
-        activeGame.handlePointer(e.touches[0], gameCanvas.getBoundingClientRect());
-      }
     }, { passive: false });
     
     gameCanvas.addEventListener('pointermove', (e) => {
