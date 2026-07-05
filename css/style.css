@@ -249,6 +249,9 @@
   .mh-gradient * {
     animation:none !important; transition:none !important;
   }
+  .mh-gradient .hero-ctas {
+    opacity:1 !important; transform:none !important; filter:none !important;
+  }
   .mh-gradient h1 .line span {
     color:var(--orange-light) !important; background:none !important; -webkit-background-clip:unset !important; opacity:1 !important; transform:none !important; filter:none !important;
   }
