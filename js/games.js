@@ -522,6 +522,9 @@
       this.inputEl = document.getElementById('drInput');
       
       this.inputEl.addEventListener('keydown', this.onInputKeyDown);
+      this.onDomClick = () => { if(this.inputEl) this.inputEl.focus(); };
+      gameDom.addEventListener('click', this.onDomClick);
+      gameDom.addEventListener('touchstart', this.onDomClick, {passive: true});
       
       this.timeLimit = 8000; // Start with 8 seconds
       this.timeRemaining = this.timeLimit;
@@ -538,6 +541,8 @@
       if(this.inputEl) {
         this.inputEl.removeEventListener('keydown', this.onInputKeyDown);
       }
+      gameDom.removeEventListener('click', this.onDomClick);
+      gameDom.removeEventListener('touchstart', this.onDomClick);
       super.stop();
     }
 

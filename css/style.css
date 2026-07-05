@@ -799,7 +799,8 @@
   .game-modal.open{ display:flex; }
   .game-modal-inner{
     background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius);
-    width:min(480px, 94vw); box-shadow:0 40px 100px -20px rgba(0,0,0,0.7); overflow:hidden;
+    width:min(480px, 94vw); max-height: 90vh; display: flex; flex-direction: column;
+    box-shadow:0 40px 100px -20px rgba(0,0,0,0.7); overflow:hidden;
     animation:modalPop 0.35s cubic-bezier(.2,.9,.2,1);
   }
   @keyframes modalPop{ from{ opacity:0; transform:scale(0.92) translateY(20px); } to{ opacity:1; transform:scale(1) translateY(0); } }
@@ -813,8 +814,8 @@
     width:28px; height:28px; border-radius:50%; transition:all 0.2s ease;
   }
   .game-close-btn:hover{ background:rgba(255,255,255,0.08); color:var(--text); }
-  .game-stage{ position:relative; background:#050a10; line-height:0; }
-  #gameCanvas{ display:block; width:100%; height:auto; touch-action:none; }
+  .game-stage{ position:relative; background:#050a10; line-height:0; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #gameCanvas{ display:block; width:100%; height:auto; touch-action:none; margin: auto; }
   .game-overlay{
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; gap:14px; padding:24px; background:rgba(5,9,14,0.9); line-height: 1.6;
