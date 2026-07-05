@@ -92,6 +92,7 @@
     }
 
     magnifyWrapper.addEventListener('pointerenter', (e) => {
+      if(e.pointerType === 'touch') return;
       const rect = magnifyWrapper.getBoundingClientRect();
       curX = targetX = e.clientX - rect.left;
       curY = targetY = e.clientY - rect.top;
@@ -103,13 +104,42 @@
     });
 
     magnifyWrapper.addEventListener('pointermove', (e) => {
+      if(e.pointerType === 'touch') return;
       const rect = magnifyWrapper.getBoundingClientRect();
       targetX = e.clientX - rect.left;
       targetY = e.clientY - rect.top;
       if (!raf) raf = requestAnimationFrame(render);
     });
 
-    magnifyWrapper.addEventListener('pointerleave', () => {
+    magnifyWrapper.addEventListener('pointerleave', (e) => {
+      if(e.pointerType === 'touch') return;
+      magnifyWrapper.classList.remove('hovering');
+      if(raf) cancelAnimationFrame(raf);
+      overlay.style.clipPath = `circle(0px at ${curX}px ${curY}px)`;
+    });
+
+    // Touch events for mobile
+    magnifyWrapper.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      const rect = magnifyWrapper.getBoundingClientRect();
+      curX = targetX = touch.clientX - rect.left;
+      curY = targetY = touch.clientY - rect.top;
+      overlay.style.clipPath = `circle(${radius}px at ${curX}px ${curY}px)`;
+      lens.style.transform = `translate(${curX - 110}px, ${curY - 110}px)`;
+      magnifyWrapper.classList.add('hovering');
+      if(raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(render);
+    }, {passive: true});
+
+    magnifyWrapper.addEventListener('touchmove', (e) => {
+      const touch = e.touches[0];
+      const rect = magnifyWrapper.getBoundingClientRect();
+      targetX = touch.clientX - rect.left;
+      targetY = touch.clientY - rect.top;
+      if (!raf) raf = requestAnimationFrame(render);
+    }, {passive: true});
+
+    magnifyWrapper.addEventListener('touchend', () => {
       magnifyWrapper.classList.remove('hovering');
       if(raf) cancelAnimationFrame(raf);
       overlay.style.clipPath = `circle(0px at ${curX}px ${curY}px)`;
