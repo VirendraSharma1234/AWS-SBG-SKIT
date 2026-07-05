@@ -174,7 +174,7 @@
 
   // ---------- cursor cloud-particle trail ----------
   const canvas = document.getElementById('cursorCanvas');
-  if(canvas && !reduceMotion && matchMedia('(hover: hover)').matches){
+  if(canvas && !reduceMotion){
     const ctx = canvas.getContext('2d');
     let w, h, particles = [];
     function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
@@ -182,20 +182,24 @@
     window.addEventListener('resize', resize);
 
     let lastSpawn = 0;
-    window.addEventListener('mousemove', (e) => {
+    
+    function spawnParticle(x, y) {
       const now = performance.now();
       if(now - lastSpawn < 35) return;
       lastSpawn = now;
       const colors = ['255,153,0', '41,182,216', '234,240,245'];
       particles.push({
-        x:e.clientX, y:e.clientY,
+        x:x, y:y,
         vx:(Math.random()-0.5)*0.4, vy:-0.3 - Math.random()*0.4,
         r:6 + Math.random()*10,
         life:1,
         color:colors[Math.floor(Math.random()*colors.length)]
       });
       if(particles.length > 90) particles.shift();
-    });
+    }
+
+    window.addEventListener('mousemove', (e) => spawnParticle(e.clientX, e.clientY));
+    window.addEventListener('touchmove', (e) => spawnParticle(e.touches[0].clientX, e.touches[0].clientY), {passive: true});
 
     function tick(){
       ctx.clearRect(0,0,w,h);
@@ -263,6 +267,15 @@
     navToggle.classList.toggle('active');
     header.classList.toggle('nav-open');
   });
+  
+  mainNav.addEventListener('click', (e) => {
+    if(e.target === mainNav || e.target.tagName === 'UL') {
+      mainNav.classList.remove('open');
+      navToggle.classList.remove('active');
+      header.classList.remove('nav-open');
+    }
+  });
+
   mainNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
     mainNav.classList.remove('open');
     navToggle.classList.remove('active');
