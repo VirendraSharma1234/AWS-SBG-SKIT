@@ -16,7 +16,7 @@
     --body: 'Inter', sans-serif;
   }
 
-  *{ margin:0; padding:0; box-sizing:border-box; }
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html{ scroll-behavior:smooth; }
 
   @media (prefers-reduced-motion: reduce){
@@ -128,7 +128,13 @@
     position:fixed; top:0; left:0; right:0; z-index:100;
     display:flex; align-items:center; justify-content:space-between;
     padding:22px clamp(20px,5vw,64px);
+    border-bottom:1px solid transparent;
     transition:all 0.4s ease;
+  }
+  header.nav-open{
+    backdrop-filter:none !important;
+    background:transparent !important;
+    border-bottom-color:transparent !important;
   }
   header.scrolled{
     padding:14px clamp(20px,5vw,64px);
@@ -731,6 +737,7 @@
   }
 
   /* ---------- reviews ---------- */
+  .review-card .stars { color: var(--orange-light); font-size: 18px; margin-bottom: 12px; letter-spacing: 2px; }
   .reviews-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:24px; }
   .review-card { padding: 2rem; display: flex; flex-direction: column; justify-content: space-between; }
   .review-card p { color: var(--text); margin-bottom: 1rem; font-style: italic; }
@@ -745,6 +752,7 @@
     display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:90;
     font-size:20px; transition:transform 0.3s ease, box-shadow 0.3s ease;
     animation:launcherPulse 2.6s ease-in-out infinite;
+    padding:0; line-height:1;
   }
   .game-launcher:hover{ transform:scale(1.1) rotate(-6deg); }
   @keyframes launcherPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(255,153,0,0.28); } 50%{ box-shadow:0 0 0 10px rgba(255,153,0,0); } }
@@ -772,10 +780,13 @@
   }
   .game-close-btn:hover{ background:rgba(255,255,255,0.08); color:var(--text); }
   .game-stage{ position:relative; background:#050a10; line-height:0; }
-  #gameCanvas{ display:block; width:100%; height:auto; }
+  #gameCanvas{ display:block; width:100%; height:auto; touch-action:none; }
   .game-overlay{
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; gap:14px; padding:24px; background:rgba(5,9,14,0.9);
+  }
+  #gameStartBtn{
+    min-width:180px; padding:14px 28px; font-size:16px; margin-top:10px; border-radius:999px;
   }
   .game-overlay h3{ font-family:var(--display); font-size:21px; color:var(--text); margin:0; }
   .game-overlay p{ color:var(--text-dim); font-size:13px; max-width:300px; line-height:1.6; margin:0; }

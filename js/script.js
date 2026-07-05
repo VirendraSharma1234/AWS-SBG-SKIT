@@ -218,8 +218,13 @@
   navToggle.addEventListener('click', () => {
     mainNav.classList.toggle('open');
     navToggle.classList.toggle('active');
+    header.classList.toggle('nav-open');
   });
-  mainNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mainNav.classList.remove('open')));
+  mainNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    mainNav.classList.remove('open');
+    navToggle.classList.remove('active');
+    header.classList.remove('nav-open');
+  }));
 
   // ---------- interactive terminal chatbot (rule-based, no external API) ----------
   const termOutput = document.getElementById('termOutput');
@@ -629,6 +634,7 @@
     });
     window.addEventListener('keyup', (e) => { keys[e.key] = false; });
 
+    gameCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
     gameCanvas.addEventListener('pointermove', (e) => {
       if(!running) return;
       const rect = gameCanvas.getBoundingClientRect();
