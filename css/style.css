@@ -647,8 +647,9 @@
   .wa-scan-hint::before, .wa-scan-hint::after{ content:''; height:1px; width:36px; background:var(--border); }
 
   /* ---------- interactive terminal chat ---------- */
-  .term-output{ min-height:150px; max-height:280px; overflow-y:auto; scrollbar-width:thin; }
-  .term-output::-webkit-scrollbar{ width:6px; }
+  .term-output{ min-height:150px; max-height:280px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border-bright) transparent; }
+  .term-output::-webkit-scrollbar{ width:6px; background:transparent; }
+  .term-output::-webkit-scrollbar-track{ background:transparent; }
   .term-output::-webkit-scrollbar-thumb{ background:var(--border-bright); border-radius:3px; }
   .term-output .line.bot{ color:var(--text); }
   .term-output .line.you{ color:var(--orange-light); }
