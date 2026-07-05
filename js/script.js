@@ -61,17 +61,18 @@
   }
 
   // ---------- magnifying-glass gradient text reveal ----------
-  const magnifyHeading = document.getElementById('magnifyHeading');
-  if(magnifyHeading && matchMedia('(hover: hover)').matches && !reduceMotion){
-    const baseH1 = magnifyHeading.querySelector('h1');
-    const overlay = baseH1.cloneNode(true);
+  const magnifyWrapper = document.getElementById('magnifyWrapper');
+  if(magnifyWrapper && matchMedia('(hover: hover)').matches && !reduceMotion){
+    const baseContent = document.getElementById('magnifyBase');
+    const overlay = baseContent.cloneNode(true);
+    overlay.id = '';
     overlay.classList.add('mh-gradient');
     overlay.setAttribute('aria-hidden', 'true');
-    magnifyHeading.appendChild(overlay);
+    magnifyWrapper.appendChild(overlay);
 
     const lens = document.createElement('div');
     lens.className = 'magnify-lens';
-    magnifyHeading.appendChild(lens);
+    magnifyWrapper.appendChild(lens);
 
     const radius = 110;
     let targetX = 0, targetY = 0, curX = 0, curY = 0, raf = null;
@@ -84,21 +85,26 @@
       raf = requestAnimationFrame(render);
     }
 
-    magnifyHeading.addEventListener('mouseenter', (e) => {
-      magnifyHeading.classList.add('hovering');
-      const r = magnifyHeading.getBoundingClientRect();
-      curX = targetX = e.clientX - r.left;
-      curY = targetY = e.clientY - r.top;
-      if(!raf) render();
+    magnifyWrapper.addEventListener('pointerenter', (e) => {
+      const rect = magnifyWrapper.getBoundingClientRect();
+      curX = targetX = e.clientX - rect.left;
+      curY = targetY = e.clientY - rect.top;
+      overlay.style.clipPath = `circle(${radius}px at ${curX}px ${curY}px)`;
+      lens.style.transform = `translate(${curX - 110}px, ${curY - 110}px)`;
+      magnifyWrapper.classList.add('hovering');
+      if(raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(render);
     });
-    magnifyHeading.addEventListener('mousemove', (e) => {
-      const r = magnifyHeading.getBoundingClientRect();
-      targetX = e.clientX - r.left;
-      targetY = e.clientY - r.top;
+
+    magnifyWrapper.addEventListener('pointermove', (e) => {
+      const rect = magnifyWrapper.getBoundingClientRect();
+      targetX = e.clientX - rect.left;
+      targetY = e.clientY - rect.top;
     });
-    magnifyHeading.addEventListener('mouseleave', () => {
-      magnifyHeading.classList.remove('hovering');
-      cancelAnimationFrame(raf); raf = null;
+
+    magnifyWrapper.addEventListener('pointerleave', () => {
+      magnifyWrapper.classList.remove('hovering');
+      if(raf) cancelAnimationFrame(raf);
       overlay.style.clipPath = `circle(0px at ${curX}px ${curY}px)`;
     });
   }
@@ -324,7 +330,14 @@
 
     if(/\bhelp\b/.test(q)) return helpText;
     if(/(joke|funny|pun)/.test(q)) return jokes[Math.floor(Math.random() * jokes.length)];
-    if(/(clear|reset)/.test(q)){ termOutput.innerHTML = ''; return null; }
+    if(/(clear|reset)/.test(q)){ 
+      termOutput.innerHTML = ''; 
+      (async () => {
+        await printTyped('Booting AWS Student Builder Group console...', 'sys', 12);
+        await printTyped('✓ Connected — ready to chat', 'bot', 12);
+      })();
+      return null; 
+    }
     if(/(thank|thanks|thx)/.test(q)) return "Anytime, builder. 🚀";
     if(/(hi|hello|hey|yo)/.test(q)) return `Hey again, ${builderName || 'builder'}! What do you want to know?`;
     if(/(bye|exit|quit)/.test(q)) return "Catch you in the WhatsApp group 👋";

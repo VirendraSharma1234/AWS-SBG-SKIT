@@ -241,25 +241,37 @@
     margin-bottom:22px;
   }
   .magnify-heading{ position:relative; }
-  .mh-gradient{
-    position:absolute; inset:0; margin:0 !important; pointer-events:none;
-    clip-path:circle(0px at 50% 50%);
+  #magnifyWrapper { position:relative; }
+  .mh-gradient {
+    position:absolute; inset:0; pointer-events:none;
+    clip-path:circle(0px at 50% 50%); z-index:10;
   }
-  .mh-gradient .line span{
-    background:linear-gradient(115deg, #ff9900, #ffc94d 22%, #29b6d8 48%, #7c6cff 68%, #ff5fa2 88%) !important;
-    background-size:280% 280% !important;
-    -webkit-background-clip:text !important; background-clip:text !important; color:transparent !important;
-    animation:gradientShift 4.5s ease-in-out infinite !important;
-    opacity:1 !important; transform:none !important;
+  .mh-gradient * {
+    animation:none !important; transition:none !important;
+  }
+  .mh-gradient h1 .line span {
+    color:var(--orange-light) !important; background:none !important; -webkit-background-clip:unset !important; opacity:1 !important; transform:none !important; filter:none !important;
+  }
+  .mh-gradient h1 .accent {
+    color:var(--text) !important; background:none !important; -webkit-background-clip:unset !important;
+  }
+  .mh-gradient p.lead {
+    color:var(--orange-light) !important; opacity:1 !important; filter:none !important; transform:none !important;
+  }
+  .mh-gradient .btn-primary {
+    background:var(--text) !important; color:var(--bg) !important; opacity:1 !important; transform:none !important; border-color:var(--text) !important;
+  }
+  .mh-gradient .btn-ghost {
+    background:var(--orange-light) !important; color:var(--bg) !important; border-color:var(--orange-light) !important; opacity:1 !important; transform:none !important;
   }
   .magnify-lens{
     position:absolute; left:0; top:0; width:220px; height:220px; border-radius:50%;
     border:1.5px solid rgba(255,255,255,0.32);
     box-shadow:0 0 0 1px rgba(255,153,0,0.12), 0 0 46px rgba(255,153,0,0.28), inset 0 0 26px rgba(255,255,255,0.06);
     pointer-events:none; opacity:0; transition:opacity 0.3s ease;
-    transform:translate(-50%,-50%);
+    transform:translate(-50%,-50%); z-index:11;
   }
-  .magnify-heading.hovering .magnify-lens{ opacity:1; }
+  #magnifyWrapper.hovering .magnify-lens{ opacity:1; }
   .hero h1 .line{ display:block; overflow:hidden; }
   .hero h1 .line span{ display:inline-block; opacity:0; transform:translateY(110%); animation:riseIn 0.8s cubic-bezier(.2,.9,.2,1) forwards; }
   .hero h1 .accent{
