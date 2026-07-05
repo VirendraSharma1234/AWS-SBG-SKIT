@@ -273,30 +273,83 @@
     '99 little bugs in the code, 99 little bugs — take one down, patch it around, 127 little bugs in the code.'
   ];
 
+  const knowledgeBase = [
+    { keys: ['event', 'workshop', 'hackathon', 'schedule', 'session'], reply: "Our year kicks off with the Orientation Session — date dropping soon! More sessions are lined up right after. Scroll to the Events section 👇" },
+    { keys: ['team', 'lead', 'who', 'runs', 'founder'], reply: "We're run by 6 students — Shlok (Club Lead), Virendra (Technical Lead), Tushar (Events), Naman (Community), Vansh (PR) and Soumya (Social/Marketing). Full squad is in the Team section." },
+    { keys: ['join', 'member', 'sign', 'up', 'register'], reply: "Easiest way in: hit the WhatsApp group in the Join section, or tap the 'Join the crew' button up top. Zero forms, zero fees." },
+    { keys: ['social', 'instagram', 'linkedin', 'meetup', 'insta'], reply: "We're on LinkedIn, Instagram and Meetup — links are in the Join section footer." },
+    { keys: ['about', 'what', 'purpose', 'mission'], reply: "AWS Student Builder Group SKIT is a student-run community that turns cloud theory into shipped projects — workshops, hackathons, cert sprints, all of it." },
+    { keys: ['ec2', 'elastic', 'compute'], reply: "Amazon EC2 provides scalable computing capacity in the cloud. It's like renting a virtual computer to run your own computer applications." },
+    { keys: ['s3', 'simple', 'storage'], reply: "Amazon S3 is an object storage service. You can use it to store and protect any amount of data for a range of use cases." },
+    { keys: ['lambda', 'serverless'], reply: "AWS Lambda lets you run code without provisioning or managing servers. You pay only for the compute time you consume." },
+    { keys: ['dynamodb', 'database', 'db'], reply: "Amazon DynamoDB is a fast and flexible NoSQL database service for any scale." },
+    { keys: ['vpc', 'virtual', 'private', 'network'], reply: "Amazon VPC lets you provision a logically isolated section of the AWS Cloud where you can launch AWS resources in a virtual network that you define." },
+    { keys: ['cloudfront', 'cdn', 'delivery'], reply: "Amazon CloudFront is a fast content delivery network (CDN) service that securely delivers data, videos, applications, and APIs to customers globally." },
+    { keys: ['iam', 'identity', 'access', 'security'], reply: "AWS IAM provides fine-grained access control across all of AWS. You can control who can access which services and resources." },
+    { keys: ['rds', 'relational'], reply: "Amazon RDS makes it easy to set up, operate, and scale a relational database in the cloud." },
+    { keys: ['route53', 'dns', 'domain'], reply: "Amazon Route 53 is a highly available and scalable cloud Domain Name System (DNS) web service." },
+    { keys: ['sqs', 'queue', 'message'], reply: "Amazon SQS is a fully managed message queuing service that enables you to decouple and scale microservices, distributed systems, and serverless applications." }
+  ];
+
+  let botState = 'normal';
+
+  function findMatch(q) {
+    const words = q.split(/[\s,.-]+/);
+    for (const kb of knowledgeBase) {
+      if (kb.keys.some(k => q.includes(k))) return kb.reply;
+      for (const w of words) {
+        for (const k of kb.keys) {
+          if (k.length > 3 && w.length >= 3 && (w.startsWith(k.slice(0, 3)) || k.startsWith(w.slice(0, 3)))) {
+            return kb.reply;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   const helpText = 'Try: about · events · team · join · socials · joke · clear · help';
 
   function botReply(raw){
     const q = raw.toLowerCase().trim();
     if(!q) return "Say something, I don't bite — I'm just JavaScript.";
+    
+    if (botState === 'menu') {
+      botState = 'normal';
+      if (q === '1') return "Our year kicks off with the Orientation Session! Check the Events section for more.";
+      if (q === '2') return "Try asking me about specific services like EC2, S3, Lambda, VPC, DynamoDB, RDS, etc.";
+      if (q === '3') return "You can reach us on LinkedIn or Instagram. Links are at the bottom of the page!";
+      return "Exiting menu. What else can I help you with?";
+    }
+
     if(/\bhelp\b/.test(q)) return helpText;
-    if(/(event|workshop|hackathon|schedule|session)/.test(q)) return "Our year kicks off with the Orientation Session — date dropping soon! More sessions are lined up right after. Scroll to the Events section 👇";
-    if(/(team|lead|who runs|founder)/.test(q)) return "We're run by 6 students — Shlok (Club Lead), Virendra (Technical Lead), Tushar (Events), Naman (Community), Vansh (PR) and Soumya (Social/Marketing). Full squad is in the Team section.";
-    if(/(join|member|sign ?up|register)/.test(q)) return "Easiest way in: hit the WhatsApp group in the Join section, or tap the 'Join the crew' button up top. Zero forms, zero fees.";
-    if(/(social|instagram|linkedin|meetup|insta)/.test(q)) return "We're on LinkedIn, Instagram and Meetup — links are in the Join section footer.";
-    if(/(about|what is|purpose|mission)/.test(q)) return "AWS Student Builder Group SKIT is a student-run community that turns cloud theory into shipped projects — workshops, hackathons, cert sprints, all of it.";
     if(/(joke|funny|pun)/.test(q)) return jokes[Math.floor(Math.random() * jokes.length)];
     if(/(clear|reset)/.test(q)){ termOutput.innerHTML = ''; return null; }
     if(/(thank|thanks|thx)/.test(q)) return "Anytime, builder. 🚀";
-    if(/(ec2|elastic compute)/.test(q)) return "Amazon EC2 provides scalable computing capacity in the cloud. It's like renting a virtual computer to run your own computer applications.";
-    if(/(s3|simple storage)/.test(q)) return "Amazon S3 is an object storage service. You can use it to store and protect any amount of data for a range of use cases.";
-    if(/(lambda|serverless)/.test(q)) return "AWS Lambda lets you run code without provisioning or managing servers. You pay only for the compute time you consume.";
-    if(/(dynamodb|database)/.test(q)) return "Amazon DynamoDB is a fast and flexible NoSQL database service for any scale.";
-    if(/(vpc|virtual private)/.test(q)) return "Amazon VPC lets you provision a logically isolated section of the AWS Cloud where you can launch AWS resources in a virtual network that you define.";
-    if(/(cloudfront|cdn)/.test(q)) return "Amazon CloudFront is a fast content delivery network (CDN) service that securely delivers data, videos, applications, and APIs to customers globally.";
-    if(/(iam|identity)/.test(q)) return "AWS IAM provides fine-grained access control across all of AWS. You can control who can access which services and resources.";
     if(/(hi|hello|hey|yo)/.test(q)) return `Hey again, ${builderName || 'builder'}! What do you want to know?`;
     if(/(bye|exit|quit)/.test(q)) return "Catch you in the WhatsApp group 👋";
-    return "I'm still learning! But I can definitely help with info about AWS services like EC2, S3, or our club events. Try asking me about those, or type 'help'.";
+    
+    // Easter Eggs
+    if(q === 'sudo' || q.startsWith('sudo ')) return "User is not in the sudoers file. This incident will be reported to Shlok.";
+    if(q === 'theme matrix') {
+      document.documentElement.style.setProperty('--bg', '#000');
+      document.documentElement.style.setProperty('--bg-panel', '#050a05');
+      document.documentElement.style.setProperty('--bg-panel-2', '#0a140a');
+      document.documentElement.style.setProperty('--text', '#00ff00');
+      document.documentElement.style.setProperty('--text-dim', '#00cc00');
+      document.documentElement.style.setProperty('--orange', '#00ff00');
+      document.documentElement.style.setProperty('--orange-light', '#ccffcc');
+      document.documentElement.style.setProperty('--blue', '#00aa00');
+      document.documentElement.style.setProperty('--border', 'rgba(0,255,0,0.2)');
+      document.documentElement.style.setProperty('--border-bright', 'rgba(0,255,0,0.6)');
+      return "Wake up, Neo... The Matrix theme has been applied.";
+    }
+
+    const match = findMatch(q);
+    if (match) return match;
+
+    botState = 'menu';
+    return "I'm not sure about that! But I can help you with:\n[1] Upcoming Events\n[2] AWS Service Summaries\n[3] Contact the Team\nType a number to continue.";
   }
 
   async function handleTermInput(value){
