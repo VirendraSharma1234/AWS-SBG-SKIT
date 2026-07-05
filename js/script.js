@@ -150,9 +150,13 @@
   const bootLoader = document.getElementById('bootLoader');
   const bootBarFill = document.getElementById('bootBarFill');
   if(bootLoader){
-    if(reduceMotion){
+    const today = new Date().toDateString();
+    const lastBoot = localStorage.getItem('lastBootDate');
+    
+    if(reduceMotion || lastBoot === today){
       bootLoader.remove();
     } else {
+      localStorage.setItem('lastBootDate', today);
       document.body.style.overflow = 'hidden';
       requestAnimationFrame(() => { bootBarFill.style.width = '100%'; });
       setTimeout(() => {
@@ -364,12 +368,42 @@
     return null;
   }
 
-  const helpText = 'Try: about · events · team · join · socials · joke · clear · help';
+  const helpText = 'Try: about · events · team · join · socials · games · joke · clear · help';
+
+  const gameAliases = {
+    '1': 'cloudStacker', 'cloud stacker': 'cloudStacker', 'stacker': 'cloudStacker',
+    '2': 'deployRace', 'deploy race': 'deployRace', 'deploy': 'deployRace',
+    '3': 'snake',
+    '4': '2048',
+    '5': 'reflexRush', 'reflex rush': 'reflexRush', 'reflex': 'reflexRush',
+    '6': 'connect4', 'connect 4': 'connect4',
+    '7': 'flappyCloud', 'flappy cloud': 'flappyCloud', 'flappy': 'flappyCloud',
+    '8': 'latencyDodger', 'latency dodger': 'latencyDodger', 'latency': 'latencyDodger'
+  };
 
   function botReply(raw){
     const q = raw.toLowerCase().trim();
     if(!q) return "Say something, I don't bite — I'm just JavaScript.";
     
+    if (botState === 'games') {
+      const g = gameAliases[q];
+      if (g) {
+        botState = 'normal';
+        document.getElementById('gameLauncher')?.click();
+        setTimeout(() => document.querySelector(`.gl-card[data-game="${g}"]`)?.click(), 300);
+        return `Launching ${g}... Have fun!`;
+      }
+      botState = 'normal';
+      if (['1','2','3','4','5','6','7','8'].includes(q)) return "Exiting game menu.";
+    } else {
+      if ((gameAliases[q] && isNaN(parseInt(q))) || q === '2048') {
+        const g = gameAliases[q];
+        document.getElementById('gameLauncher')?.click();
+        setTimeout(() => document.querySelector(`.gl-card[data-game="${g}"]`)?.click(), 300);
+        return `Launching ${g}... Have fun!`;
+      }
+    }
+
     if (botState === 'menu') {
       botState = 'normal';
       if (q === '1') return "Our year kicks off with the Orientation Session! Check the Events section for more.";
@@ -378,11 +412,18 @@
       return "Exiting menu. What else can I help you with?";
     }
 
+    if(/(game|arcade|play)/.test(q)) {
+      botState = 'games';
+      return "Ready to play? Here's the Arcade:\n[1] Cloud Stacker\n[2] Deploy Race\n[3] Snake\n[4] 2048\n[5] Reflex Rush\n[6] Connect 4\n[7] Flappy Cloud\n[8] Latency Dodger\nType a number, or just type the game name!";
+    }
+
     if(/\bhelp\b/.test(q)) return helpText;
     if(/(joke|funny|pun)/.test(q)) return jokes[Math.floor(Math.random() * jokes.length)];
     if(/(clear|reset)/.test(q)){ 
       termOutput.innerHTML = ''; 
       (async () => {
+        await printTyped('$ aws sbg --init', 'sys', 10);
+        await new Promise(r => setTimeout(r, 200));
         await printTyped('Booting AWS Student Builder Group console...', 'sys', 12);
         await printTyped('✓ Connected — ready to chat', 'bot', 12);
       })();
@@ -549,205 +590,6 @@
 
   // green: intentionally a no-op (traffic-light look only)
   tdotMax.addEventListener('click', () => {});
-
-  // ---------- Latency Dodger Logic ----------
-  const gameLauncher = document.getElementById('gameLauncher');
-  const gameModal = document.getElementById('gameModal');
-  const gameCloseBtn = document.getElementById('gameCloseBtn');
-  const gameCanvas = document.getElementById('gameCanvas');
-  const gameOverlay = document.getElementById('gameOverlay');
-  const gameStartBtn = document.getElementById('gameStartBtn');
-  const gameScoreLabel = document.getElementById('gameScoreLabel');
-  const gameBestLabel = document.getElementById('gameBestLabel');
-
-  if (gameLauncher && gameCanvas) {
-    const gctx = gameCanvas.getContext('2d');
-    const GW = gameCanvas.width, GH = gameCanvas.height;
-
-    // ---- best score (persisted) ----
-    let best = 0;
-    try{ best = parseInt(localStorage.getItem('ld_best') || '0', 10) || 0; }catch(e){ best = 0; }
-    if(gameBestLabel) gameBestLabel.textContent = 'Best: ' + best;
-
-    // ---- game state ----
-    let player, obstacles, orbs, score, spawnTimer, elapsed;
-    let running = false, raf = null, lastTime = 0;
-    const keys = {};
-
-    function resetGame(){
-      player = { x: GW/2, y: GH-50, r:18, targetX: GW/2 };
-      obstacles = [];
-      orbs = [];
-      score = 0;
-      elapsed = 0;
-      spawnTimer = 500;
-    }
-
-    // ---- modal open/close ----
-    function openGameModal(){
-      gameModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
-      showStartScreen();
-    }
-    function closeGameModal(){
-      gameModal.classList.remove('open');
-      document.body.style.overflow = '';
-      running = false;
-      if(raf) cancelAnimationFrame(raf);
-    }
-    gameLauncher.addEventListener('click', openGameModal);
-    if(gameCloseBtn) gameCloseBtn.addEventListener('click', closeGameModal);
-    gameModal.addEventListener('click', (e) => { if(e.target === gameModal) closeGameModal(); });
-
-    function showStartScreen(){
-      gameOverlay.style.display = 'flex';
-      gameOverlay.querySelector('h3').textContent = 'Latency Dodger';
-      gameOverlay.querySelector('p').innerHTML = 'Dodge the red latency spikes.<br>Grab green cache hits for points.<br>Arrow keys / A&nbsp;D to move, or drag with your mouse.';
-      gameStartBtn.textContent = 'Start ▶';
-    }
-
-    if(gameStartBtn) {
-      gameStartBtn.addEventListener('click', () => {
-        resetGame();
-        gameOverlay.style.display = 'none';
-        running = true;
-        lastTime = performance.now();
-        raf = requestAnimationFrame(loop);
-      });
-    }
-
-    // ---- main loop ----
-    function loop(t){
-      if(!running) return;
-      const dt = Math.min(40, t - lastTime); // clamp dt so tab-switching doesn't cause huge jumps
-      lastTime = t;
-      update(dt);
-      draw();
-      raf = requestAnimationFrame(loop);
-    }
-
-    function update(dt){
-      elapsed += dt;
-      const speedMul = 1 + elapsed / 22000; // difficulty ramps up over ~22s cycles
-
-      // keyboard movement
-      let dir = 0;
-      if(keys['ArrowLeft'] || keys['a'] || keys['A']) dir -= 1;
-      if(keys['ArrowRight'] || keys['d'] || keys['D']) dir += 1;
-      if(dir !== 0){
-        player.targetX += dir * 0.55 * dt;
-        player.targetX = Math.max(player.r, Math.min(GW - player.r, player.targetX));
-      }
-      player.x += (player.targetX - player.x) * 0.22; // smooth easing toward target
-
-      // spawn obstacles/orbs
-      spawnTimer -= dt;
-      if(spawnTimer <= 0){
-        spawnTimer = Math.max(240, 620 - elapsed / 45); // spawns get faster over time
-        const x = 26 + Math.random() * (GW - 52);
-        if(Math.random() < 0.28){
-          orbs.push({ x, y:-20, r:9, vy:0.17 * speedMul });
-        } else {
-          obstacles.push({ x, y:-30, w:30 + Math.random()*22, h:20, vy:0.21 * speedMul });
-        }
-      }
-
-      obstacles.forEach(o => o.y += o.vy * dt);
-      orbs.forEach(o => o.y += o.vy * dt);
-      obstacles = obstacles.filter(o => o.y < GH + 40);
-      orbs = orbs.filter(o => o.y < GH + 40);
-
-      // collision: player vs obstacle
-      for(const o of obstacles){
-        const cx = Math.max(o.x - o.w/2, Math.min(player.x, o.x + o.w/2));
-        const cy = Math.max(o.y - o.h/2, Math.min(player.y, o.y + o.h/2));
-        const dx = player.x - cx, dy = player.y - cy;
-        if(dx*dx + dy*dy < player.r*player.r){ endGame(); return; }
-      }
-      // collision: player vs orb
-      for(let i = orbs.length - 1; i >= 0; i--){
-        const o = orbs[i];
-        const dx = player.x - o.x, dy = player.y - o.y;
-        if(Math.sqrt(dx*dx + dy*dy) < player.r + o.r){ orbs.splice(i, 1); score += 15; }
-      }
-
-      score += dt * 0.012; // slow trickle of survival points
-      if(gameScoreLabel) gameScoreLabel.textContent = 'Score: ' + Math.floor(score);
-    }
-
-    function draw(){
-      gctx.clearRect(0, 0, GW, GH);
-      gctx.fillStyle = '#050a10';
-      gctx.fillRect(0, 0, GW, GH);
-
-      // faint grid backdrop
-      gctx.strokeStyle = 'rgba(255,153,0,0.07)';
-      gctx.lineWidth = 1;
-      for(let gx = 0; gx < GW; gx += 40){ gctx.beginPath(); gctx.moveTo(gx, 0); gctx.lineTo(gx, GH); gctx.stroke(); }
-
-      // obstacles (triangles)
-      gctx.fillStyle = '#ff4d4d';
-      obstacles.forEach(o => {
-        gctx.beginPath();
-        gctx.moveTo(o.x, o.y - o.h/2);
-        gctx.lineTo(o.x + o.w/2, o.y + o.h/2);
-        gctx.lineTo(o.x - o.w/2, o.y + o.h/2);
-        gctx.closePath();
-        gctx.fill();
-      });
-
-      // orbs (circles)
-      gctx.fillStyle = '#3ddc84';
-      orbs.forEach(o => {
-        gctx.beginPath();
-        gctx.arc(o.x, o.y, o.r, 0, Math.PI*2);
-        gctx.fill();
-      });
-
-      // player (simple cloud made of 3 overlapping circles)
-      gctx.fillStyle = '#eaf0f5';
-      gctx.beginPath();
-      gctx.arc(player.x - 9, player.y + 4, 11, 0, Math.PI*2);
-      gctx.arc(player.x + 9, player.y + 4, 11, 0, Math.PI*2);
-      gctx.arc(player.x, player.y - 7, 13, 0, Math.PI*2);
-      gctx.fill();
-    }
-
-    function endGame(){
-      running = false;
-      if(raf) cancelAnimationFrame(raf);
-      const finalScore = Math.floor(score);
-      if(finalScore > best){
-        best = finalScore;
-        try{ localStorage.setItem('ld_best', String(best)); }catch(e){}
-      }
-      if(gameBestLabel) gameBestLabel.textContent = 'Best: ' + best;
-      gameOverlay.style.display = 'flex';
-      gameOverlay.querySelector('h3').textContent = 'Game over';
-      gameOverlay.querySelector('p').innerHTML = 'You scored <strong style="color:#ffc94d">' + finalScore + '</strong>.<br>Best so far: ' + best + '.';
-      gameStartBtn.textContent = 'Play again ▶';
-    }
-
-    // ---- input ----
-    window.addEventListener('keydown', (e) => { 
-      keys[e.key] = true;
-      if (!running && gameModal.classList.contains('open') && (e.key === 'Enter' || e.key === ' ')) {
-        if (gameOverlay.style.display !== 'none' && gameStartBtn) {
-          gameStartBtn.click();
-        }
-      }
-    });
-    window.addEventListener('keyup', (e) => { keys[e.key] = false; });
-
-    gameCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
-    gameCanvas.addEventListener('pointermove', (e) => {
-      if(!running) return;
-      const rect = gameCanvas.getBoundingClientRect();
-      const scaleX = GW / rect.width;
-      const x = (e.clientX - rect.left) * scaleX;
-      player.targetX = Math.max(player.r, Math.min(GW - player.r, x));
-    });
-  }
 
 })();
 

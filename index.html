@@ -655,24 +655,74 @@
 
   <button class="to-top" id="toTop" aria-label="Back to top">↑</button>
 
-  <button class="game-launcher" id="gameLauncher" title="Play Latency Dodger" aria-label="Play a quick game">🎮</button>
+  <button class="game-launcher" id="gameLauncher" title="Open Arcade" aria-label="Open arcade library">🎮</button>
 
   <div class="game-modal" id="gameModal">
     <div class="game-modal-inner">
       <div class="game-header">
-        <span class="game-title">⚡ Latency Dodger</span>
-        <button class="game-close-btn" id="gameCloseBtn" aria-label="Close game">✕</button>
+        <button class="game-back-btn" id="gameBackBtn" aria-label="Back to library" style="display:none;">←</button>
+        <span class="game-title" id="gameTitleText">🎮 Arcade Library</span>
+        <button class="game-close-btn" id="gameCloseBtn" aria-label="Close arcade">×</button>
       </div>
-      <div class="game-stage">
-        <canvas id="gameCanvas" width="440" height="560"></canvas>
-        <div class="game-overlay" id="gameOverlay">
-          <h3>Latency Dodger</h3>
-          <p>Dodge the red latency spikes. Grab green cache hits for points.<br>Arrow keys / A&nbsp;D to move, or drag
-            with your mouse.</p>
-          <button class="btn-primary" id="gameStartBtn">Start ▶</button>
+      <div class="game-stage" id="gameStage">
+        
+        <!-- Game Library View -->
+        <div class="game-library" id="gameLibrary">
+          <div class="gl-card" data-game="latencyDodger">
+            <div class="gl-icon">🔴</div>
+            <h4>Latency Dodger</h4>
+            <p>Dodge red spikes, catch cache hits</p>
+          </div>
+          <div class="gl-card" data-game="cloudStacker">
+            <div class="gl-icon">🧱</div>
+            <h4>Cloud Stacker</h4>
+            <p>Build the tallest service tower</p>
+          </div>
+          <div class="gl-card" data-game="deployRace">
+            <div class="gl-icon">⌨️</div>
+            <h4>Deploy Race</h4>
+            <p>Type AWS commands instantly</p>
+          </div>
+          <div class="gl-card" data-game="snake">
+            <div class="gl-icon">🐍</div>
+            <h4>Snake</h4>
+            <p>The timeless retro classic</p>
+          </div>
+          <div class="gl-card" data-game="2048">
+            <div class="gl-icon">🧩</div>
+            <h4>2048</h4>
+            <p>Merge instances to reach 2048</p>
+          </div>
+          <div class="gl-card" data-game="reflexRush">
+            <div class="gl-icon">⚡</div>
+            <h4>Reflex Rush</h4>
+            <p>Test your reaction times</p>
+          </div>
+          <div class="gl-card" data-game="connect4">
+            <div class="gl-icon">🔵</div>
+            <h4>Connect 4</h4>
+            <p>2-player head-to-head strategy</p>
+          </div>
+          <div class="gl-card" data-game="flappyCloud">
+            <div class="gl-icon">☁️</div>
+            <h4>Flappy Cloud</h4>
+            <p>Navigate through the firewalls</p>
+          </div>
+        </div>
+
+        <!-- Active Game View (Hidden by Default) -->
+        <div id="gamePlayArea" style="display:none; position:relative; width:100%; height:100%; min-height:560px;">
+          <canvas id="gameCanvas" width="440" height="560"></canvas>
+          <div id="gameDom" style="width:100%; height:100%; display:none; position:absolute; inset:0;"></div>
+          
+          <div class="game-overlay" id="gameOverlay">
+            <h3 id="overlayTitle">Game Title</h3>
+            <p id="overlayDesc">Game Description</p>
+            <button class="btn-primary" id="gameStartBtn">Start 🚀</button>
+          </div>
         </div>
       </div>
-      <div class="game-footer-bar">
+      <div class="game-footer-bar" id="gameFooter" style="display:none;">
         <span id="gameScoreLabel">Score: 0</span>
         <span id="gameBestLabel">Best: 0</span>
       </div>
@@ -680,6 +730,7 @@
   </div>
 
   <script src="js/script.js"></script>
+  <script src="js/games.js"></script>
 
 </body>
 
