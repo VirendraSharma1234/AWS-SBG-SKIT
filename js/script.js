@@ -486,17 +486,6 @@
     card.addEventListener('mouseleave', () => { card.style.transform = ''; });
   });
 
-  // ---------- magnetic buttons ----------
-  document.querySelectorAll('.btn-primary').forEach(btn => {
-    btn.addEventListener('mousemove', (e) => {
-      const r = btn.getBoundingClientRect();
-      const x = (e.clientX - r.left - r.width / 2) * 0.25;
-      const y = (e.clientY - r.top - r.height / 2) * 0.4;
-      btn.style.transform = `translate(${x}px, ${y - 2}px)`;
-    });
-    btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
-  });
-
   // ---------- terminal window controls ----------
   const terminalWrap = document.getElementById('terminalWrap');
   const terminalEl = document.getElementById('terminalEl');
