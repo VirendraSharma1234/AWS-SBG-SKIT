@@ -63,7 +63,8 @@
 
   <div class="boot-loader" id="bootLoader">
     <div class="boot-box">
-      <div class="boot-logo"><span>AWS</span> AWS Student Builder Group · SKIT</div>
+      <div class="boot-logo"><img style="width: 50px; border-radius: 50%;" src="favicon3.jpg">AWS Student Builder Group
+        · SKIT</div>
       <div class="bl-line" style="animation-delay:0.05s"><span class="bl-prompt">$</span> aws sbg --launch</div>
       <div class="bl-line" style="animation-delay:0.45s">Connecting to region <span
           style="color:var(--orange-light)">ap-south-1</span>...</div>
@@ -665,7 +666,7 @@
         <button class="game-close-btn" id="gameCloseBtn" aria-label="Close arcade">×</button>
       </div>
       <div class="game-stage" id="gameStage">
-        
+
         <!-- Game Library View -->
         <div class="game-library" id="gameLibrary">
           <div class="gl-card" data-game="latencyDodger">
@@ -711,10 +712,11 @@
         </div>
 
         <!-- Active Game View (Hidden by Default) -->
-        <div id="gamePlayArea" style="display:none; position:relative; width:100%; height:100%; flex: 1; display: flex; flex-direction: column;">
+        <div id="gamePlayArea"
+          style="display:none; position:relative; width:100%; height:100%; flex: 1; display: flex; flex-direction: column;">
           <canvas id="gameCanvas" width="440" height="560"></canvas>
           <div id="gameDom" style="width:100%; height:100%; display:none; position:absolute; inset:0;"></div>
-          
+
           <div class="game-overlay" id="gameOverlay">
             <h3 id="overlayTitle">Game Title</h3>
             <p id="overlayDesc">Game Description</p>
