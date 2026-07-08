@@ -590,18 +590,32 @@
   class Snake extends BaseGame {
     constructor() {
       super('sn', 'Snake', 'canvas');
-      this.grid = 20;
+      this.grid = 26; // SNAKE_CELL
+      this.SNAKE_FRUITS = [
+        { type:'apple', color:'#ff4d4d' },
+        { type:'orange', color:'#ffa726' },
+        { type:'lime', color:'#c6ff4d' },
+        { type:'berry', color:'#ff4d9e' },
+        { type:'grape', color:'#b967ff' }
+      ];
       this.onKeyDown = (e) => {
         if(!this.running) return;
         const key = e.key;
-        if(key === 'ArrowUp' && this.dy === 0) { this.dx = 0; this.dy = -1; }
-        else if(key === 'ArrowDown' && this.dy === 0) { this.dx = 0; this.dy = 1; }
-        else if(key === 'ArrowLeft' && this.dx === 0) { this.dx = -1; this.dy = 0; }
-        else if(key === 'ArrowRight' && this.dx === 0) { this.dx = 1; this.dy = 0; }
+        if(key === 'ArrowUp' || key === 'w' || key === 'W') { e.preventDefault(); this.setSnakeDir(0, -1); }
+        else if(key === 'ArrowDown' || key === 's' || key === 'S') { e.preventDefault(); this.setSnakeDir(0, 1); }
+        else if(key === 'ArrowLeft' || key === 'a' || key === 'A') { e.preventDefault(); this.setSnakeDir(-1, 0); }
+        else if(key === 'ArrowRight' || key === 'd' || key === 'D') { e.preventDefault(); this.setSnakeDir(1, 0); }
       };
-      // Touch tracking
+      
       this.touchStartX = 0;
       this.touchStartY = 0;
+      this.touchActive = false;
+      this.swipeFired = false;
+    }
+
+    setSnakeDir(dx, dy) {
+      if(dx !== 0 && this.dx === 0){ this.pendingDx = dx; this.pendingDy = 0; }
+      else if(dy !== 0 && this.dy === 0){ this.pendingDx = 0; this.pendingDy = dy; }
     }
 
     mount() {
@@ -620,116 +634,260 @@
       const desc = document.getElementById('overlayDesc');
       if (gameOver) {
         title.textContent = 'Game Over';
-        desc.innerHTML = `Score: <strong style="color:#ffc94d">${this.score}</strong>.<br>Best so far: ${this.best}.`;
+        desc.innerHTML = `You scored <strong style="color:var(--orange-light)">${this.score}</strong>.<br>Best so far: ${this.best}.`;
       } else {
         title.textContent = 'Snake';
-        desc.innerHTML = 'Classic Snake.<br>Use Arrow Keys or Swipe to move.<br>Don\'t hit the walls or yourself.';
+        desc.innerHTML = 'Swipe (or arrow keys / W A S D) to steer.<br>Eat the fruit, don\'t hit yourself or the wall.';
       }
+      if(this.ctx) this.drawBoardOnly();
     }
 
     start() {
-      this.snake = [{x: 10, y: 14}, {x: 10, y: 15}];
-      this.dx = 0;
-      this.dy = -1;
+      this.cols = Math.floor(this.w / this.grid);
+      this.rows = Math.floor(this.h / this.grid);
+      const cx = Math.floor(this.cols / 2), cy = Math.floor(this.rows / 2);
+      
+      this.snake = [{x: cx, y: cy}, {x: cx-1, y: cy}, {x: cx-2, y: cy}];
+      this.prevSnake = this.snake.map(s => ({x: s.x, y: s.y}));
+      
+      this.dx = 1;
+      this.dy = 0;
+      this.pendingDx = 1;
+      this.pendingDy = 0;
+      
       this.apple = this.spawnApple();
-      this.moveTimer = 0;
-      this.moveInterval = 120; // ms per step
+      this.moveInterval = 120;
+      this.moveAcc = 0;
+      this.foodPulse = 0;
       super.start();
     }
 
     spawnApple() {
-      const cols = Math.floor(this.w / this.grid);
-      const rows = Math.floor(this.h / this.grid);
-      let newApple;
-      while (true) {
-        newApple = {
-          x: Math.floor(Math.random() * cols),
-          y: Math.floor(Math.random() * rows)
-        };
-        const collision = this.snake.some(s => s.x === newApple.x && s.y === newApple.y);
-        if(!collision) break;
-      }
-      return newApple;
+      let fx, fy, collide;
+      do {
+        fx = Math.floor(Math.random() * this.cols);
+        fy = Math.floor(Math.random() * this.rows);
+        collide = this.snake && this.snake.some(s => s.x === fx && s.y === fy);
+      } while(collide);
+      return { x: fx, y: fy, fruit: this.SNAKE_FRUITS[Math.floor(Math.random() * this.SNAKE_FRUITS.length)] };
     }
 
     update(dt) {
-      this.moveTimer += dt;
-      if (this.moveTimer >= this.moveInterval) {
-        this.moveTimer -= this.moveInterval;
-        
-        const head = { x: this.snake[0].x + this.dx, y: this.snake[0].y + this.dy };
-        
-        const cols = Math.floor(this.w / this.grid);
-        const rows = Math.floor(this.h / this.grid);
-        
-        // Wall collision
-        if (head.x < 0 || head.x >= cols || head.y < 0 || head.y >= rows) {
-          this.endGame();
-          return;
-        }
-        
-        // Self collision
-        if (this.snake.some(s => s.x === head.x && s.y === head.y)) {
-          this.endGame();
-          return;
-        }
-        
-        this.snake.unshift(head);
-        
-        // Apple collision
-        if (head.x === this.apple.x && head.y === this.apple.y) {
-          this.score++;
-          if(gameScoreLabel) gameScoreLabel.textContent = 'Score: ' + this.score;
-          this.apple = this.spawnApple();
-          this.moveInterval = Math.max(50, this.moveInterval - 2); // gets faster
-        } else {
-          this.snake.pop(); // remove tail
-        }
+      this.moveAcc += dt;
+      this.foodPulse += dt;
+      if (this.moveAcc >= this.moveInterval) {
+        this.moveAcc -= this.moveInterval;
+        this.stepSnake();
       }
     }
 
+    stepSnake() {
+      this.prevSnake = this.snake.map(s => ({x: s.x, y: s.y}));
+      this.dx = this.pendingDx;
+      this.dy = this.pendingDy;
+      
+      const head = { x: this.snake[0].x + this.dx, y: this.snake[0].y + this.dy };
+      
+      // Wall collision
+      if (head.x < 0 || head.x >= this.cols || head.y < 0 || head.y >= this.rows) {
+        this.endGame();
+        return;
+      }
+      
+      // Self collision
+      if (this.snake.some(s => s.x === head.x && s.y === head.y)) {
+        this.endGame();
+        return;
+      }
+      
+      this.snake.unshift(head);
+      
+      // Apple collision
+      if (head.x === this.apple.x && head.y === this.apple.y) {
+        this.score += 10;
+        if(gameScoreLabel) gameScoreLabel.textContent = 'Score: ' + this.score;
+        this.apple = this.spawnApple();
+        this.moveInterval = Math.max(70, this.moveInterval - 2.5); // gets faster
+      } else {
+        this.snake.pop(); // remove tail
+      }
+    }
+
+    roundRect(ctx, x, y, w, h, r){
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    drawBoardOnly() {
+      if(!this.ctx) return;
+      const snctx = this.ctx;
+      const NW = this.w;
+      const NH = this.h;
+      const SNAKE_CELL = this.grid;
+      const SNAKE_COLS = Math.floor(NW / SNAKE_CELL);
+      const SNAKE_ROWS = Math.floor(NH / SNAKE_CELL);
+
+      snctx.clearRect(0, 0, NW, NH);
+
+      // ambient gradient base
+      const grad = snctx.createRadialGradient(NW/2, NH/2, 40, NW/2, NH/2, NW * 0.78);
+      grad.addColorStop(0, '#0e1922');
+      grad.addColorStop(1, '#050a10');
+      snctx.fillStyle = grad;
+      snctx.fillRect(0, 0, NW, NH);
+
+      // faint dot-grid at cell intersections
+      snctx.fillStyle = 'rgba(255,153,0,0.08)';
+      for(let gx = 0; gx <= SNAKE_COLS; gx++){
+        for(let gy = 0; gy <= SNAKE_ROWS; gy++){
+          snctx.beginPath();
+          snctx.arc(gx * SNAKE_CELL, gy * SNAKE_CELL, 1.1, 0, Math.PI*2);
+          snctx.fill();
+        }
+      }
+
+      // very soft checker texture on top for depth
+      for(let ry = 0; ry < SNAKE_ROWS; ry++){
+        for(let rx = 0; rx < SNAKE_COLS; rx++){
+          if((rx + ry) % 2 === 0) continue;
+          snctx.fillStyle = 'rgba(255,255,255,0.012)';
+          snctx.fillRect(rx * SNAKE_CELL, ry * SNAKE_CELL, SNAKE_CELL, SNAKE_CELL);
+        }
+      }
+
+      // glowing boundary
+      snctx.save();
+      snctx.shadowColor = 'rgba(255,153,0,0.55)';
+      snctx.shadowBlur = 12;
+      snctx.strokeStyle = '#ff9900';
+      snctx.lineWidth = 4;
+      snctx.strokeRect(2, 2, SNAKE_COLS * SNAKE_CELL - 4, SNAKE_ROWS * SNAKE_CELL - 4);
+      snctx.restore();
+    }
+
+    drawFruit(ctx, cx, cy, s, fruit){
+      ctx.save();
+      ctx.shadowColor = fruit.color;
+      ctx.shadowBlur = 10;
+
+      if(fruit.type === 'grape'){
+        ctx.fillStyle = fruit.color;
+        const r = s * 0.15;
+        [[-0.22,-0.12],[0.05,-0.18],[0.3,-0.06],[-0.1,0.12],[0.16,0.16],[-0.3,0.28],[0.02,0.36]].forEach(([ox,oy]) => {
+          ctx.beginPath();
+          ctx.arc(cx + ox*s, cy + oy*s, r, 0, Math.PI*2);
+          ctx.fill();
+        });
+        ctx.strokeStyle = '#3ddc84';
+        ctx.lineWidth = Math.max(1.2, s*0.05);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - s*0.34);
+        ctx.lineTo(cx, cy - s*0.16);
+        ctx.stroke();
+      } else {
+        // round fruit body
+        ctx.fillStyle = fruit.color;
+        ctx.beginPath();
+        ctx.arc(cx, cy + s*0.04, s*0.4, 0, Math.PI*2);
+        ctx.fill();
+
+        // stem
+        ctx.strokeStyle = '#7a5a3a';
+        ctx.lineWidth = Math.max(1.5, s*0.08);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - s*0.36);
+        ctx.lineTo(cx + s*0.06, cy - s*0.52);
+        ctx.stroke();
+
+        // leaf
+        ctx.fillStyle = '#3ddc84';
+        ctx.beginPath();
+        ctx.ellipse(cx + s*0.2, cy - s*0.48, s*0.15, s*0.08, -0.6, 0, Math.PI*2);
+        ctx.fill();
+
+        // glossy highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath();
+        ctx.arc(cx - s*0.13, cy - s*0.08, s*0.09, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
     draw() {
-      const gctx = this.ctx;
-      gctx.clearRect(0, 0, this.w, this.h);
-      gctx.fillStyle = '#050a10';
-      gctx.fillRect(0, 0, this.w, this.h);
-      
-      // Draw Apple
-      gctx.fillStyle = '#ff4d4d';
-      gctx.fillRect(this.apple.x * this.grid + 2, this.apple.y * this.grid + 2, this.grid - 4, this.grid - 4);
-      
-      // Draw Snake
-      this.snake.forEach((segment, i) => {
-        gctx.fillStyle = i === 0 ? '#3ddc84' : '#eaf0f5';
-        gctx.fillRect(segment.x * this.grid + 1, segment.y * this.grid + 1, this.grid - 2, this.grid - 2);
-      });
+      this.drawBoardOnly();
+      if(!this.snake) return;
+
+      const progress = Math.min(1, this.moveAcc / this.moveInterval);
+      const snctx = this.ctx;
+      const SNAKE_CELL = this.grid;
+
+      // food
+      const pulse = 1 + Math.sin(this.foodPulse / 220) * 0.14;
+      const fcx = this.apple.x * SNAKE_CELL + SNAKE_CELL/2;
+      const fcy = this.apple.y * SNAKE_CELL + SNAKE_CELL/2;
+      this.drawFruit(snctx, fcx, fcy, SNAKE_CELL * pulse, this.apple.fruit);
+
+      // snake body
+      for(let i = this.snake.length - 1; i >= 0; i--){
+        const s = this.snake[i];
+        const prev = (i === 0) ? (this.prevSnake[0] || s) : (this.prevSnake[i-1] || s);
+        const rx = prev.x + (s.x - prev.x) * progress;
+        const ry = prev.y + (s.y - prev.y) * progress;
+        const px = rx * SNAKE_CELL, py = ry * SNAKE_CELL;
+
+        snctx.fillStyle = i === 0 ? '#ffc94d' : '#ff9900';
+        this.roundRect(snctx, px + 2, py + 2, SNAKE_CELL - 4, SNAKE_CELL - 4, 8);
+        snctx.fill();
+
+        if(i === 0){
+          // eyes
+          const cx = px + SNAKE_CELL/2, cy = py + SNAKE_CELL/2;
+          const ex = this.dx * SNAKE_CELL * 0.2, ey = this.dy * SNAKE_CELL * 0.2;
+          const perpX = -this.dy * SNAKE_CELL * 0.17, perpY = this.dx * SNAKE_CELL * 0.17;
+          const eyeR = SNAKE_CELL * 0.1;
+          snctx.fillStyle = '#0a1018';
+          snctx.beginPath();
+          snctx.arc(cx + ex + perpX, cy + ey + perpY, eyeR, 0, Math.PI*2);
+          snctx.arc(cx + ex - perpX, cy + ey - perpY, eyeR, 0, Math.PI*2);
+          snctx.fill();
+        }
+      }
     }
 
     handlePointer(e, rect) {
       if(!this.running) return;
+      
+      const THRESHOLD = 6;
       if(e.type === 'pointerdown' || e.type === 'touchstart') {
+        this.touchActive = true;
+        this.swipeFired = false;
         this.touchStartX = e.clientX;
         this.touchStartY = e.clientY;
       } else if (e.type === 'pointermove' || e.type === 'touchmove') {
-        if (this.touchStartX === undefined) return;
-        // Calculate swipe
+        if (!this.touchActive || this.swipeFired) return;
+        
         const diffX = e.clientX - this.touchStartX;
         const diffY = e.clientY - this.touchStartY;
         
-        if (Math.abs(diffX) > 30 || Math.abs(diffY) > 30) {
+        if (Math.max(Math.abs(diffX), Math.abs(diffY)) >= THRESHOLD) {
+          this.swipeFired = true;
           if (Math.abs(diffX) > Math.abs(diffY)) {
-            // Horizontal swipe
-            if (diffX > 0 && this.dx === 0) { this.dx = 1; this.dy = 0; }
-            else if (diffX < 0 && this.dx === 0) { this.dx = -1; this.dy = 0; }
+            this.setSnakeDir(diffX > 0 ? 1 : -1, 0);
           } else {
-            // Vertical swipe
-            if (diffY > 0 && this.dy === 0) { this.dx = 0; this.dy = 1; }
-            else if (diffY < 0 && this.dy === 0) { this.dx = 0; this.dy = -1; }
+            this.setSnakeDir(0, diffY > 0 ? 1 : -1);
           }
-          // Reset touch start to prevent multiple fires from same swipe
           this.touchStartX = e.clientX;
           this.touchStartY = e.clientY;
+          this.swipeFired = false;
         }
+      } else if (e.type === 'pointerup' || e.type === 'touchend') {
+        this.touchActive = false;
       }
     }
   }
