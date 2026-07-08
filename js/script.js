@@ -570,6 +570,18 @@
     card.addEventListener('mouseleave', () => { card.style.transform = ''; });
   });
 
+  // ---------- event card tilt ----------
+  document.querySelectorAll('.event-card').forEach(card => {
+    if (card.classList.contains('placeholder')) return;
+    card.addEventListener('mousemove', (e) => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      card.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translateY(-5px) scale(1.01)`;
+    });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+  });
+
   // ---------- terminal window controls ----------
   const terminalWrap = document.getElementById('terminalWrap');
   const terminalEl = document.getElementById('terminalEl');
