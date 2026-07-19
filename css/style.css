@@ -496,16 +496,27 @@
     content:''; position:absolute; left:24px; top:30px; bottom:30px; width:2px;
     background:linear-gradient(var(--border), var(--border-bright), var(--border));
   }
-  .tl-item{ position:relative; padding-left:66px; margin-bottom:44px; }
+  .tl-item{ position:relative; padding-left:66px; margin-bottom:44px; transition: all 0.4s ease; }
   .tl-item:last-child{ margin-bottom:0; }
   .tl-dot{
     position:absolute; left:14px; top:30px; width:22px; height:22px; border-radius:50%;
     background:var(--bg-panel); border:2px solid var(--orange); display:flex; align-items:center; justify-content:center;
     box-sizing: border-box;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.4s ease, box-shadow 0.4s ease;
   }
   .tl-dot::after{ content:''; width:8px; height:8px; border-radius:50%; background:var(--orange); }
   .tl-item.done .tl-dot{ border-color:var(--text-dimmer); }
   .tl-item.done .tl-dot::after{ background:var(--text-dimmer); }
+
+  /* Dot hover effects triggered by timeline item hover */
+  .tl-item:hover .tl-dot {
+    border-color: var(--orange-light);
+    box-shadow: 0 0 15px rgba(255, 153, 0, 0.6);
+    transform: scale(1.25);
+  }
+  .tl-item-featured:hover .tl-dot-featured {
+    transform: scale(1.15) !important;
+  }
 
   .event-card{
     background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius);
@@ -514,10 +525,13 @@
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 24px;
-    transition:transform 0.4s cubic-bezier(.2,.8,.2,1), border-color 0.4s ease, box-shadow 0.4s ease;
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
     width: 100%; box-sizing: border-box;
   }
-  .event-card:hover{ transform:translateX(6px); border-color:var(--border-bright); box-shadow:0 16px 40px -18px rgba(255,153,0,0.3); }
+  .event-card:hover{ 
+    border-color:var(--border-bright); 
+    box-shadow: 0 20px 45px -15px rgba(255, 153, 0, 0.25), 0 0 20px rgba(41, 182, 216, 0.05);
+  }
   .event-top{ display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
   .badge{
     font-family:var(--mono); font-size:10.5px; letter-spacing:0.5px; text-transform:uppercase;
@@ -532,14 +546,47 @@
   .event-card p{ color:var(--text-dim); font-size:14.5px; max-width:600px; margin-bottom: 20px; }
   .event-tag{ font-family:var(--mono); font-size:11px; color:var(--text-dimmer); white-space:nowrap; }
 
-  /* Event Actions Buttons */
-  .event-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top: auto; }
-  .event-actions button {
-    font-family:var(--mono); font-size:12.5px; padding:10px 18px; border-radius:999px; cursor:not-allowed; opacity:0.6;
-    transition:all 0.3s ease; display:inline-flex; align-items:center; gap:6px; font-weight: 600;
+  /* Event Actions Buttons & Links */
+  .event-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top: 16px; position: relative; z-index: 5; }
+  .event-actions button, .event-actions a {
+    font-family:var(--mono); font-size:12px; padding:10px 18px; border-radius:999px; cursor:not-allowed; opacity:0.5;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); display:inline-flex; align-items:center; gap:6px; font-weight: 600;
+    text-decoration: none; pointer-events: none; outline: none;
   }
-  .event-actions .btn-reg { background:rgba(255,153,0,0.1); border:1px solid rgba(255,153,0,0.4); color:var(--orange-light); }
-  .event-actions .btn-feed { background:rgba(255,255,255,0.03); border:1px solid var(--border); color:var(--text-dim); }
+  
+  /* Enabled state: when NOT disabled */
+  .event-actions button:not([disabled]), .event-actions a:not(.disabled) {
+    cursor: pointer;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Specific styles for buttons */
+  .event-actions .btn-reg {
+    background: rgba(255,153,0,0.06);
+    border: 1px solid rgba(255,153,0,0.3);
+    color: var(--orange-light);
+  }
+  .event-actions .btn-reg:not([disabled]):hover, .event-actions .btn-reg:not(.disabled):hover {
+    background: linear-gradient(135deg, var(--orange-light), var(--orange));
+    color: #0a1018;
+    border-color: transparent;
+    box-shadow: 0 6px 20px rgba(255,153,0,0.35);
+    transform: translateY(-2px);
+  }
+
+  .event-actions .btn-feed {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .event-actions .btn-feed:not([disabled]):hover, .event-actions .btn-feed:not(.disabled):hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.25);
+    color: var(--text);
+    box-shadow: 0 6px 20px rgba(255,255,255,0.05);
+    transform: translateY(-2px);
+  }
 
   /* Mobile Event Cards Alignment */
   @media (max-width: 768px) {
