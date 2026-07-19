@@ -522,7 +522,7 @@
     background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius);
     padding:26px 30px; 
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr 140px;
     align-items: center;
     gap: 24px;
     transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
@@ -544,7 +544,7 @@
   .event-date{ font-family:var(--mono); font-size:12px; color:var(--text-dimmer); }
   .event-card h3{ font-family:var(--display); font-size:19px; margin-bottom:6px; }
   .event-card p{ color:var(--text-dim); font-size:14.5px; max-width:600px; margin-bottom: 20px; }
-  .event-tag{ font-family:var(--mono); font-size:11px; color:var(--text-dimmer); white-space:nowrap; }
+  .event-tag{ font-family:var(--mono); font-size:11px; color:var(--text-dimmer); white-space:nowrap; justify-self: end; }
 
   /* Event Actions Buttons & Links */
   .event-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top: 16px; position: relative; z-index: 5; }
