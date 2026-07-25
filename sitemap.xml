@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://sitemaps.org">
   <url>
-    <loc>https://aws-sbg-skit.vercel.app</loc>
-    <lastmod>2026-07-25</lastmod>
+    <loc>https://vercel.app</loc>
+    <lastmod>2026-07-25T00:00:00+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
