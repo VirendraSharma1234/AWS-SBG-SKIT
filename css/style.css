@@ -21,6 +21,7 @@
     scroll-behavior:smooth; 
     scrollbar-width: thin; 
     scrollbar-color: var(--text-dimmer) var(--bg-panel); 
+    scrollbar-gutter: stable;
   }
   
   ::-webkit-scrollbar { width: 8px; height: 8px; }
