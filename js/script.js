@@ -57,7 +57,7 @@
     }
     document.addEventListener('scroll', onStoryScroll, { passive:true });
     window.addEventListener('resize', updateStory);
-    updateStory();
+    requestAnimationFrame(updateStory);
   }
 
   // ---------- magnifying-glass gradient text reveal ----------
@@ -166,8 +166,8 @@
       setTimeout(() => {
         bootLoader.classList.add('exit');
         document.body.style.overflow = '';
-        setTimeout(() => bootLoader.remove(), 750);
-      }, 1900);
+        setTimeout(() => bootLoader.remove(), 400);
+      }, 650);
     }
   }
 
