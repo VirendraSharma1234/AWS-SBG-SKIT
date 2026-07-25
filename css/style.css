@@ -893,28 +893,6 @@
   .to-top.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
   .to-top:hover{ background:rgba(255,153,0,0.1); }
 
-  /* ---------- content-visibility: lazy render below-fold sections on mobile ---------- */
-  .section {
-    content-visibility: auto;
-    contain-intrinsic-size: 0 600px;
-  }
-
-  /* ---------- mobile performance: disable expensive animations ---------- */
-  @media (max-width: 900px) {
-    /* Disable GPU-heavy ambient glow animations on mobile */
-    .bg-glow { animation: none !important; }
-    /* Disable cloud drift animations on mobile */
-    .cloud-drift { animation: none !important; }
-    /* Stop logo shine sweep on mobile */
-    .logo-mark::after { animation: none !important; }
-    /* Simplify node pulse on mobile */
-    .node-circle { animation: none !important; }
-    /* Disable game launcher pulse on mobile */
-    .game-launcher { animation: none !important; }
-    /* Remove backdrop-filter blur on mobile nav (expensive on mobile GPU) */
-    header.scrolled { backdrop-filter: none; -webkit-backdrop-filter: none; }
-  }
-
   /* ---------- responsive ---------- */
   @media (max-width: 900px){
     .hero-inner{ grid-template-columns:1fr; }

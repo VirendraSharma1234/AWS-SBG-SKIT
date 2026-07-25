@@ -1,7 +1,5 @@
 (function(){
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // Detect touch/mobile to skip desktop-only effects (cursor trail, parallax, spotlight)
-  const isMobile = window.matchMedia('(hover: none) and (pointer: coarse)').matches || window.innerWidth <= 900;
 
   // ---------- scroll-scrubbed assembly story ----------
   const storySection = document.getElementById('scrollStory');
@@ -180,8 +178,6 @@
   }
 
   // ---------- spotlight hover tracking ----------
-  // Skip spotlight on mobile (touch devices don't have hover/mousemove)
-  if(!isMobile){
   document.querySelectorAll('.spotlight').forEach(card => {
     card.addEventListener('mousemove', (e) => {
       const r = card.getBoundingClientRect();
@@ -189,12 +185,10 @@
       card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
     });
   });
-  }
 
   // ---------- cursor cloud-particle trail ----------
-  // Canvas cursor trail: skip entirely on mobile (no cursor + continuous rAF loop is expensive)
   const canvas = document.getElementById('cursorCanvas');
-  if(canvas && !reduceMotion && !isMobile){
+  if(canvas && !reduceMotion){
     const ctx = canvas.getContext('2d');
     let w, h, particles = [];
     function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
@@ -219,6 +213,7 @@
     }
 
     window.addEventListener('mousemove', (e) => spawnParticle(e.clientX, e.clientY));
+    window.addEventListener('touchmove', (e) => spawnParticle(e.touches[0].clientX, e.touches[0].clientY), {passive: true});
 
     function tick(){
       ctx.clearRect(0,0,w,h);
@@ -228,7 +223,7 @@
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
           ctx.fillStyle = `rgba(${p.color},${p.life*0.18})`;
-          // Note: ctx.filter removed — too expensive on mobile GPU; desktop still looks fine without it
+          ctx.filter = 'blur(2px)';
           ctx.fill();
         }
       });
@@ -236,23 +231,17 @@
       requestAnimationFrame(tick);
     }
     tick();
-  } else if(canvas) {
-    // Hide canvas element on mobile to free compositing layer
-    canvas.style.display = 'none';
   }
 
   // ---------- hero scroll parallax ----------
-  // Hero parallax: skip on mobile (no GPU compositing guarantee, causes jank)
   const heroNetwork = document.querySelector('.hero-network-wrap');
-  if(!isMobile){
-    function heroParallax(){
-      const y = window.scrollY;
-      if(y < window.innerHeight && heroNetwork){
-        heroNetwork.style.transform = `translateY(calc(-50% + ${y*0.18}px)) scale(${1 - y*0.0003})`;
-      }
+  function heroParallax(){
+    const y = window.scrollY;
+    if(y < window.innerHeight && heroNetwork){
+      heroNetwork.style.transform = `translateY(calc(-50% + ${y*0.18}px)) scale(${1 - y*0.0003})`;
     }
-    document.addEventListener('scroll', heroParallax, { passive:true });
   }
+  document.addEventListener('scroll', heroParallax, { passive:true });
 
   // ---------- nav scroll state ----------
   const header = document.getElementById('siteHeader');
@@ -272,19 +261,16 @@
   requestAnimationFrame(onScroll);
 
   // ---------- cloud parallax ----------
-  // Cloud parallax: skip on mobile (multiple transforms per scroll = jank)
   const cloudEls = document.querySelectorAll('.cloud-parallax');
-  if(!isMobile){
-    function onCloudScroll(){
-      const y = window.scrollY;
-      cloudEls.forEach(el => {
-        const speed = parseFloat(el.dataset.speed || 0.05);
-        el.style.transform = `translateY(${y * speed}px)`;
-      });
-    }
-    document.addEventListener('scroll', onCloudScroll, { passive:true });
-    requestAnimationFrame(onCloudScroll);
+  function onCloudScroll(){
+    const y = window.scrollY;
+    cloudEls.forEach(el => {
+      const speed = parseFloat(el.dataset.speed || 0.05);
+      el.style.transform = `translateY(${y * speed}px)`;
+    });
   }
+  document.addEventListener('scroll', onCloudScroll, { passive:true });
+  requestAnimationFrame(onCloudScroll);
 
   toTop.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
 
