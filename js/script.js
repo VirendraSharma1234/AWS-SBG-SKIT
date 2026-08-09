@@ -13,7 +13,6 @@
     const storyText = document.getElementById('storyText');
     const storyHint = document.getElementById('storyHint');
 
-    // [startX, startY, startRot, endX, endY, endRot] — end positions form a hexagon ring
     const shapeConfig = [
       [-420, -260, -140,    0, -130,  -6],
       [ 480, -300,  150,  112,  -65,   8],
@@ -26,13 +25,21 @@
     function lerp(a, b, t){ return a + (b - a) * t; }
     function smoothstep(t){ return t*t*(3 - 2*t); }
 
+    let storyTop = 0, storyHeight = 0;
+    function cacheStoryPos() {
+      const rect = storySection.getBoundingClientRect();
+      storyTop = window.scrollY + rect.top;
+      storyHeight = storySection.offsetHeight;
+    }
+    cacheStoryPos();
+    window.addEventListener('resize', cacheStoryPos, { passive: true });
+
     let ticking = false;
     function updateStory(){
       ticking = false;
-      const rect = storySection.getBoundingClientRect();
-      const total = rect.height - window.innerHeight;
+      const total = storyHeight - window.innerHeight;
       if(total <= 0) return;
-      let progress = -rect.top / total;
+      let progress = (window.scrollY - storyTop) / total;
       progress = Math.max(0, Math.min(1, progress));
       const eased = smoothstep(progress);
 
@@ -48,15 +55,14 @@
         el.style.opacity = opacity;
       });
 
-      storyCore.classList.toggle('show', progress > 0.72);
-      storyText.classList.toggle('show', progress > 0.6);
+      if(storyCore) storyCore.classList.toggle('show', progress > 0.72);
+      if(storyText) storyText.classList.toggle('show', progress > 0.6);
       if(storyHint) storyHint.style.opacity = progress > 0.08 ? '0' : '0.7';
     }
     function onStoryScroll(){
       if(!ticking){ requestAnimationFrame(updateStory); ticking = true; }
     }
     document.addEventListener('scroll', onStoryScroll, { passive:true });
-    window.addEventListener('resize', updateStory);
     requestAnimationFrame(updateStory);
   }
 
@@ -79,7 +85,10 @@
     magnifyWrapper.appendChild(lens);
 
     const radius = 110;
-    let targetX = 0, targetY = 0, curX = 0, curY = 0, raf = null;
+    let targetX = 0, targetY = 0, curX = 0, curY = 0, raf = null, magRect = null;
+
+    function updateMagRect() { magRect = magnifyWrapper.getBoundingClientRect(); }
+    window.addEventListener('resize', updateMagRect, { passive: true });
 
     function render(){
       const dx = targetX - curX;
@@ -97,9 +106,9 @@
 
     magnifyWrapper.addEventListener('pointerenter', (e) => {
       if(e.pointerType === 'touch') return;
-      const rect = magnifyWrapper.getBoundingClientRect();
-      curX = targetX = e.clientX - rect.left;
-      curY = targetY = e.clientY - rect.top;
+      updateMagRect();
+      curX = targetX = e.clientX - magRect.left;
+      curY = targetY = e.clientY - magRect.top;
       overlay.style.clipPath = `circle(${radius}px at ${curX}px ${curY}px)`;
       lens.style.transform = `translate(${curX - 110}px, ${curY - 110}px)`;
       magnifyWrapper.classList.add('hovering');
@@ -109,9 +118,9 @@
 
     magnifyWrapper.addEventListener('pointermove', (e) => {
       if(e.pointerType === 'touch') return;
-      const rect = magnifyWrapper.getBoundingClientRect();
-      targetX = e.clientX - rect.left;
-      targetY = e.clientY - rect.top;
+      if (!magRect) updateMagRect();
+      targetX = e.clientX - magRect.left;
+      targetY = e.clientY - magRect.top;
       if (!raf) raf = requestAnimationFrame(render);
     });
 
@@ -122,12 +131,11 @@
       overlay.style.clipPath = `circle(0px at ${curX}px ${curY}px)`;
     });
 
-    // Touch events for mobile
     magnifyWrapper.addEventListener('touchstart', (e) => {
       const touch = e.touches[0];
-      const rect = magnifyWrapper.getBoundingClientRect();
-      curX = targetX = touch.clientX - rect.left;
-      curY = targetY = touch.clientY - rect.top;
+      updateMagRect();
+      curX = targetX = touch.clientX - magRect.left;
+      curY = targetY = touch.clientY - magRect.top;
       overlay.style.clipPath = `circle(${radius}px at ${curX}px ${curY}px)`;
       lens.style.transform = `translate(${curX - 110}px, ${curY - 110}px)`;
       magnifyWrapper.classList.add('hovering');
@@ -137,9 +145,9 @@
 
     magnifyWrapper.addEventListener('touchmove', (e) => {
       const touch = e.touches[0];
-      const rect = magnifyWrapper.getBoundingClientRect();
-      targetX = touch.clientX - rect.left;
-      targetY = touch.clientY - rect.top;
+      if (!magRect) updateMagRect();
+      targetX = touch.clientX - magRect.left;
+      targetY = touch.clientY - magRect.top;
       if (!raf) raf = requestAnimationFrame(render);
     }, {passive: true});
 
@@ -150,52 +158,31 @@
     });
   }
 
-  // ---------- boot loader ----------
-  const bootLoader = document.getElementById('bootLoader');
-  const bootBarFill = document.getElementById('bootBarFill');
-  if(bootLoader){
-    // Skip animation entirely for crawlers/Lighthouse (navigator.webdriver = true in headless Chrome)
-    if(navigator.webdriver){
-      bootLoader.style.display = 'none';
-      setTimeout(() => bootLoader.remove(), 0);
-    } else {
-      const today = new Date().toDateString();
-      const lastBoot = localStorage.getItem('lastBootDate');
-      if(reduceMotion || lastBoot === today){
-        // Defer DOM removal to avoid forced synchronous reflow on init
-        requestAnimationFrame(() => bootLoader.remove());
-      } else {
-        localStorage.setItem('lastBootDate', today);
-        document.body.style.overflow = 'hidden';
-        requestAnimationFrame(() => { bootBarFill.style.width = '100%'; });
-        setTimeout(() => {
-          bootLoader.classList.add('exit');
-          document.body.style.overflow = '';
-          setTimeout(() => bootLoader.remove(), 400);
-        }, 650);
-      }
-    }
-  }
+
 
   // ---------- spotlight hover tracking ----------
   document.querySelectorAll('.spotlight').forEach(card => {
+    let r = null;
+    card.addEventListener('mouseenter', () => { r = card.getBoundingClientRect(); });
     card.addEventListener('mousemove', (e) => {
-      const r = card.getBoundingClientRect();
+      if(!r) r = card.getBoundingClientRect();
       card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
       card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
     });
+    card.addEventListener('mouseleave', () => { r = null; });
   });
 
-  // ---------- cursor cloud-particle trail ----------
+  // ---------- cursor cloud-particle trail (desktop only) ----------
   const canvas = document.getElementById('cursorCanvas');
-  if(canvas && !reduceMotion){
+  const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 768);
+  if(canvas && !reduceMotion && !isTouchDevice){
     const ctx = canvas.getContext('2d');
     let w, h, particles = [];
     function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
     resize();
     window.addEventListener('resize', resize);
 
-    let lastSpawn = 0;
+    let lastSpawn = 0, animId = null;
     
     function spawnParticle(x, y) {
       const now = performance.now();
@@ -209,28 +196,31 @@
         life:1,
         color:colors[Math.floor(Math.random()*colors.length)]
       });
-      if(particles.length > 90) particles.shift();
+      if(particles.length > 60) particles.shift();
+      if(!animId) { animId = requestAnimationFrame(tick); }
     }
 
-    window.addEventListener('mousemove', (e) => spawnParticle(e.clientX, e.clientY));
+    window.addEventListener('mousemove', (e) => spawnParticle(e.clientX, e.clientY), {passive: true});
     window.addEventListener('touchmove', (e) => spawnParticle(e.touches[0].clientX, e.touches[0].clientY), {passive: true});
 
     function tick(){
       ctx.clearRect(0,0,w,h);
       particles.forEach(p => {
-        p.x += p.vx; p.y += p.vy; p.life -= 0.012; p.r += 0.15;
+        p.x += p.vx; p.y += p.vy; p.life -= 0.015; p.r += 0.15;
         if(p.life > 0){
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
           ctx.fillStyle = `rgba(${p.color},${p.life*0.18})`;
-          ctx.filter = 'blur(2px)';
           ctx.fill();
         }
       });
       particles = particles.filter(p => p.life > 0);
-      requestAnimationFrame(tick);
+      if(particles.length > 0){
+        animId = requestAnimationFrame(tick);
+      } else {
+        animId = null;
+      }
     }
-    tick();
   }
 
   // ---------- hero scroll parallax ----------
@@ -250,14 +240,13 @@
 
   function onScroll(){
     const y = window.scrollY;
-    header.classList.toggle('scrolled', y > 40);
+    if(header) header.classList.toggle('scrolled', y > 40);
     const h = document.documentElement;
     const scrollPct = (y / (h.scrollHeight - h.clientHeight)) * 100;
-    progressBar.style.width = scrollPct + '%';
-    toTop.classList.toggle('show', y > 600);
+    if(progressBar) progressBar.style.width = scrollPct + '%';
+    if(toTop) toTop.classList.toggle('show', y > 600);
   }
   document.addEventListener('scroll', onScroll, { passive:true });
-  // Defer initial call to avoid forced synchronous reflow during script init
   requestAnimationFrame(onScroll);
 
   // ---------- cloud parallax ----------
@@ -272,32 +261,34 @@
   document.addEventListener('scroll', onCloudScroll, { passive:true });
   requestAnimationFrame(onCloudScroll);
 
-  toTop.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
+  if(toTop) toTop.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
 
   // ---------- mobile nav ----------
   const navToggle = document.getElementById('navToggle');
   const mainNav = document.getElementById('mainNav');
-  navToggle.addEventListener('click', () => {
-    mainNav.classList.toggle('open');
-    navToggle.classList.toggle('active');
-    header.classList.toggle('nav-open');
-  });
-  
-  mainNav.addEventListener('click', (e) => {
-    if(e.target === mainNav || e.target.tagName === 'UL') {
+  if(navToggle && mainNav){
+    navToggle.addEventListener('click', () => {
+      mainNav.classList.toggle('open');
+      navToggle.classList.toggle('active');
+      header.classList.toggle('nav-open');
+    });
+    
+    mainNav.addEventListener('click', (e) => {
+      if(e.target === mainNav || e.target.tagName === 'UL') {
+        mainNav.classList.remove('open');
+        navToggle.classList.remove('active');
+        header.classList.remove('nav-open');
+      }
+    });
+
+    mainNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
       mainNav.classList.remove('open');
       navToggle.classList.remove('active');
       header.classList.remove('nav-open');
-    }
-  });
+    }));
+  }
 
-  mainNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
-    mainNav.classList.remove('open');
-    navToggle.classList.remove('active');
-    header.classList.remove('nav-open');
-  }));
-
-  // ---------- interactive terminal chatbot (rule-based, no external API) ----------
+  // ---------- interactive terminal chatbot ----------
   const termOutput = document.getElementById('termOutput');
   const termInput = document.getElementById('termInput');
   let awaitingName = true;
@@ -330,6 +321,7 @@
         if(i <= text.length){
           setTimeout(step, speed || 16);
         } else {
+          div.innerHTML = text;
           resolve();
         }
       };
@@ -345,7 +337,8 @@
   ];
 
   const knowledgeBase = [
-    { keys: ['event', 'workshop', 'hackathon', 'schedule', 'session'], reply: "Our year kicks off with the Orientation Session — date dropping soon! More sessions are lined up right after. Scroll to the Events section 👇" },
+    { keys: ['event', 'workshop', 'hackathon', 'schedule', 'session'], reply: "Our schedule is stacked with hands-on workshops, tabling events, Community Day, and the AWSsome Hackathon! Check out the full timeline in the Events section 👇" },
+    { keys: ['builder', 'center', 'portal', 'voucher'], reply: "AWS Builder Center is the official student portal where you register your builder profile, access free cloud credits, and earn AWS certification vouchers! Head to the Builder Center section or <a href=\"https://bit.ly/3S4nIze\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--orange-light);text-decoration:underline;\">JOIN HERE 🚀</a>" },
     { keys: ['team', 'lead', 'who', 'runs', 'founder'], reply: "We're run by 6 students — Shlok (Club Lead), Virendra (Technical Lead), Tushar (Events), Naman (Community), Vansh (PR) and Soumya (Social/Marketing). Full squad is in the Team section." },
     { keys: ['join', 'member', 'sign', 'up', 'register'], reply: "Easiest way in: hit the WhatsApp group in the Join section, or tap the 'Join the crew' button up top. Zero forms, zero fees." },
     { keys: ['social', 'instagram', 'linkedin', 'meetup', 'insta'], reply: "We're on LinkedIn, Instagram and Meetup — links are in the Join section footer." },
@@ -444,7 +437,6 @@
     if(/(hi|hello|hey|yo)/.test(q)) return `Hey again, ${builderName || 'builder'}! What do you want to know?`;
     if(/(bye|exit|quit)/.test(q)) return "Catch you in the WhatsApp group 👋";
     
-    // Easter Eggs
     if(q === 'sudo' || q.startsWith('sudo ')) return "User is not in the sudoers file. This incident will be reported to Shlok.";
     if(q === 'theme matrix') {
       document.documentElement.style.setProperty('--bg', '#000');
@@ -467,17 +459,21 @@
     return "I'm not sure about that! But I can help you with:\n[1] Upcoming Events\n[2] AWS Service Summaries\n[3] Contact the Team\nType a number to continue.";
   }
 
-  async function handleTermInput(value){
+  async function handleTermInput(value, isChip = false){
     const trimmed = value.trim();
     if(!trimmed) return;
     printLine('$ ' + trimmed, 'you');
 
-    if(awaitingName){
+    if(awaitingName && !isChip){
       builderName = trimmed.split(' ')[0];
       awaitingName = false;
       await printTyped(`Nice to meet you, ${builderName}! Welcome to the AWS Student Builder Group, SKIT. 🚀`, 'bot');
       await printTyped(helpText, 'sys');
       return;
+    }
+
+    if(awaitingName && isChip){
+      awaitingName = false;
     }
 
     const reply = botReply(trimmed);
@@ -489,11 +485,10 @@
       if(e.key === 'Enter'){
         const value = termInput.value;
         termInput.value = '';
-        handleTermInput(value);
+        handleTermInput(value, false);
       }
     });
 
-    // boot sequence for the terminal chat
     (async function bootTerminalChat(){
       await new Promise(r => setTimeout(r, 900));
       await printTyped('$ aws sbg --init', 'sys', 10);
@@ -504,11 +499,10 @@
     })();
   }
 
-  // node chip stagger & click handler
   document.querySelectorAll('.node-chip').forEach((chip, i) => {
     chip.style.animationDelay = (1.1 + i * 0.09) + 's';
     chip.addEventListener('click', () => {
-      handleTermInput(chip.textContent.trim());
+      handleTermInput(chip.textContent.trim(), true);
     });
   });
 
@@ -555,7 +549,6 @@
         if(!match) return;
         const target = parseInt(match[0], 10);
         const suffix = el.textContent.replace(/\d+/, '');
-        let start = 0;
         const dur = 1200;
         const startTime = performance.now();
         function step(now){
@@ -572,25 +565,29 @@
 
   // ---------- team card tilt ----------
   document.querySelectorAll('.team-card').forEach(card => {
+    let r = null;
+    card.addEventListener('mouseenter', () => { r = card.getBoundingClientRect(); });
     card.addEventListener('mousemove', (e) => {
-      const r = card.getBoundingClientRect();
+      if(!r) r = card.getBoundingClientRect();
       const x = (e.clientX - r.left) / r.width - 0.5;
       const y = (e.clientY - r.top) / r.height - 0.5;
       card.style.transform = `perspective(600px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg) translateY(-4px)`;
     });
-    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+    card.addEventListener('mouseleave', () => { r = null; card.style.transform = ''; });
   });
 
   // ---------- event card tilt ----------
   document.querySelectorAll('.event-card').forEach(card => {
     if (card.classList.contains('placeholder')) return;
+    let r = null;
+    card.addEventListener('mouseenter', () => { r = card.getBoundingClientRect(); });
     card.addEventListener('mousemove', (e) => {
-      const r = card.getBoundingClientRect();
+      if(!r) r = card.getBoundingClientRect();
       const x = (e.clientX - r.left) / r.width - 0.5;
       const y = (e.clientY - r.top) / r.height - 0.5;
       card.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translateY(-5px) scale(1.01)`;
     });
-    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+    card.addEventListener('mouseleave', () => { r = null; card.style.transform = ''; });
   });
 
   // ---------- terminal window controls ----------
@@ -600,19 +597,23 @@
   const tdotMin = document.getElementById('tdotMin');
   const tdotMax = document.getElementById('tdotMax');
 
-  // red: close — fades out then the window is fully removed
-  tdotClose.addEventListener('click', () => {
-    terminalWrap.classList.add('is-closing');
-    setTimeout(() => terminalWrap.classList.add('is-removed'), 350);
-  });
+  if(tdotClose){
+    tdotClose.addEventListener('click', () => {
+      if(terminalWrap){
+        terminalWrap.classList.add('is-closing');
+        setTimeout(() => terminalWrap.classList.add('is-removed'), 350);
+      }
+    });
+  }
 
-  // yellow: toggles minimize (top bar only, 3 dots) <-> maximize (full window)
-  tdotMin.addEventListener('click', () => {
-    terminalEl.classList.toggle('is-minimized');
-  });
+  if(tdotMin && terminalEl){
+    tdotMin.addEventListener('click', () => {
+      terminalEl.classList.toggle('is-minimized');
+    });
+  }
 
-  // green: intentionally a no-op (traffic-light look only)
-  tdotMax.addEventListener('click', () => {});
+  if(tdotMax){
+    tdotMax.addEventListener('click', () => {});
+  }
 
 })();
-

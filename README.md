@@ -1,29 +1,55 @@
-# AWS Student Builder Group · SKIT — Website
+# ☁️ AWS Student Builder Group (SBG) · SKIT Jaipur
 
-A multi-file rebuild of the club site with updated branding, content, and an interactive terminal chatbot.
+Official student-run cloud community at Swami Keshvanand Institute of Technology (SKIT), Jaipur.
 
-## Structure
-```
-aws-sbg-skit/
-├── index.html          # markup + content
-├── css/
-│   └── style.css        # all styling
-├── js/
-│   └── script.js        # animations, reveal effects, terminal chatbot
-└── assets/
-    └── whatsapp-qr.png   # WhatsApp group QR code
-```
+---
 
-## What changed from the original
-- **Branding**: "AWS Cloud Club" → "AWS Student Builder Group" everywhere (nav badge shortened to "AWS SBG" for space).
-- **Events**: heading now reads "Our first year, mapped out." First entry is the Orientation Session (date coming soon), second is a placeholder card for the rest of the year's lineup.
-- **Team**: real 6-person core team with LinkedIn/GitHub links. Shlok Shukla also has an AWS Builder ID link. Avatars are still initials — search `TEAM DATA` in `index.html` and swap `.avatar-inner` divs for `<img>` tags once headshots are ready.
-- **Join section**: the old application form is replaced with a WhatsApp join card (QR code + button). Social row is now LinkedIn → Instagram → Meetup only.
-- **Footer**: replaced the "not officially affiliated" disclaimer with a more confident independent-community line.
-- **Copy**: button text and hero eyebrow tweaked to be more energetic; "Recruiting for 2026 batch" pill removed.
-- **Terminal**: the old scripted typewriter is now a live, rule-based chatbot (no external AI API). It asks for the visitor's name, greets them, then answers simple keyword-matched questions (`help`, `events`, `team`, `join`, `about`, `socials`, `joke`, `clear`). Logic lives in `js/script.js` under the "interactive terminal chatbot" section.
+## ⚡ What is AWS?
 
-## To edit later
-- **QR code / WhatsApp link**: replace `assets/whatsapp-qr.png` and update the `href` on `.wa-btn` in `index.html` if the group link ever changes.
-- **Chatbot answers**: edit the `botReply()` function in `js/script.js` — it's a simple keyword-matching `if` chain, easy to extend.
-- **Team photos**: once available, replace the initials markup with `<img src="assets/team/xyz.jpg" alt="...">` inside each `.avatar-inner`.
+**Amazon Web Services (AWS)** is the world's most comprehensive and broadly adopted cloud platform, offering over 200 fully featured services from data centers globally. Millions of customers — including the fastest-growing startups, largest enterprises, and leading government agencies — use AWS to lower costs, become more agile, and innovate faster.
+
+---
+
+## 🚀 What is AWS SBG at SKIT?
+
+**AWS Student Builder Group (SBG) at SKIT** is a student-led community dedicated to empowering students with real-world cloud computing skills. We bridge the gap between academic theory and industry practice through hands-on cloud labs, collaborative projects, peer mentorship, and AWS certification prep.
+
+Key highlights:
+- Open & free for students of all branches and academic years.
+- Hands-on experience with core services like EC2, S3, Lambda, DynamoDB, and CloudFront.
+- Direct guidance for earning official AWS Certifications (Cloud Practitioner, Solutions Architect).
+
+---
+
+## 📅 What Events We Will Organize
+
+Our year-round roadmap is packed with interactive sessions, workshops, and flagship tech events:
+
+1. **Orientation Session** — Introduction to AWS SBG, cloud fundamentals, and community roadmap.
+2. **AWS Cloud Workshop** — Hands-on lab session building your first serverless application.
+3. **Tabling Events** — On-campus interactive pop-ups, cloud quizzes, and swag giveaways.
+4. **Build with Kiro** — Developer tool deep-dive and AI-assisted cloud development.
+5. **Career & Networking Session** — Mentorship with AWS Cloud Captains and industry professionals.
+6. **AWS Services Workshops** — Intensive practical sessions covering compute, storage, databases, and security.
+7. **AWS Student Community Day** — Flagship gathering featuring keynote speakers, live demos, and networking.
+8. **AWSsome Hackathon** — 24-hour cloud hackathon to build and deploy scalable solutions for real-world challenges.
+
+---
+
+## 🏢 About AWS Builder Center
+
+The **AWS Builder Center** is the official community platform for student developers. 
+
+It provides members with:
+- **Free Hands-on Labs & Courses**: Beginner to advanced cloud learning modules.
+- **Regional Capabilities & Workshops**: Tailored learning paths based on active region programs.
+- **Vouchers & Recognition**: Opportunities to earn AWS certification vouchers, digital badges, and cloud credits.
+- **Topic-Focused Spaces**: Collaborative discussion hubs for serverless, AI/ML, DevOps, and cloud architecture.
+
+---
+
+## 🌐 Official Website
+
+Explore our live website, event schedule, team details, and interactive cloud console terminal:
+
+👉 **[https://aws-sbg-skit.vercel.app/](https://aws-sbg-skit.vercel.app/)**
