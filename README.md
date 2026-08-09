@@ -1,6 +1,6 @@
-# ☁️ AWS Student Builder Group (SBG) · SKIT Jaipur
+# ☁️ AWS Student Builder Group SKIT
 
-Official student-run cloud community at Swami Keshvanand Institute of Technology (SKIT), Jaipur.
+Official student-run cloud community at Swami Keshvanand Institute of Technology (SKIT).
 
 ---
 
@@ -10,9 +10,9 @@ Official student-run cloud community at Swami Keshvanand Institute of Technology
 
 ---
 
-## 🚀 What is AWS SBG at SKIT?
+## 🚀 What is AWS Student Builder Group SKIT?
 
-**AWS Student Builder Group (SBG) at SKIT** is a student-led community dedicated to empowering students with real-world cloud computing skills. We bridge the gap between academic theory and industry practice through hands-on cloud labs, collaborative projects, peer mentorship, and AWS certification prep.
+**AWS Student Builder Group SKIT** is a student-led community dedicated to empowering students with real-world cloud computing skills. We bridge the gap between academic theory and industry practice through hands-on cloud labs, collaborative projects, peer mentorship, and AWS certification prep.
 
 Key highlights:
 - Open & free for students of all branches and academic years.
@@ -25,7 +25,7 @@ Key highlights:
 
 Our year-round roadmap is packed with interactive sessions, workshops, and flagship tech events:
 
-1. **Orientation Session** — Introduction to AWS SBG, cloud fundamentals, and community roadmap.
+1. **Orientation Session** — Introduction to AWS SBG SKIT, cloud fundamentals, and community roadmap.
 2. **AWS Cloud Workshop** — Hands-on lab session building your first serverless application.
 3. **Tabling Events** — On-campus interactive pop-ups, cloud quizzes, and swag giveaways.
 4. **Build with Kiro** — Developer tool deep-dive and AI-assisted cloud development.

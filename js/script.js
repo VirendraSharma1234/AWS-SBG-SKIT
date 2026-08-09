@@ -467,7 +467,7 @@
     if(awaitingName && !isChip){
       builderName = trimmed.split(' ')[0];
       awaitingName = false;
-      await printTyped(`Nice to meet you, ${builderName}! Welcome to the AWS Student Builder Group, SKIT. 🚀`, 'bot');
+      await printTyped(`Nice to meet you, ${builderName}! Welcome to AWS Student Builder Group SKIT. 🚀`, 'bot');
       await printTyped(helpText, 'sys');
       return;
     }
