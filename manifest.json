@@ -4,14 +4,14 @@
   "description": "Official AWS Student Builder Group at SKIT Jaipur",
   "icons": [
     {
-      "src": "/favicon.png",
+      "src": "/android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/favicon3.jpg",
+      "src": "/android-chrome-512x512.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png"
     }
   ],
   "start_url": "/",
