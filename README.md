@@ -1,6 +1,8 @@
 # ☁️ AWS Student Builder Group SKIT
 
-Official student-run cloud community at Swami Keshvanand Institute of Technology (SKIT).
+🌐 **Live Website**: [https://aws-sbg-skit.vercel.app/](https://aws-sbg-skit.vercel.app/)
+
+Official student-run cloud community at Swami Keshvanand Institute of Technology (SKIT), Jaipur.
 
 ---
 
