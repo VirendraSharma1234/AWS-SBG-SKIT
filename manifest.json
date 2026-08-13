@@ -1,0 +1,21 @@
+{
+  "name": "AWS Student Builder Group SKIT",
+  "short_name": "AWS SBG SKIT",
+  "description": "Official AWS Student Builder Group at SKIT Jaipur",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon3.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1018",
+  "theme_color": "#0a1018"
+}
